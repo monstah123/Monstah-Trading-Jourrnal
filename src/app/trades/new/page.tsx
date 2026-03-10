@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { saveTrade, generateId, getTradeById } from '@/lib/storage';
@@ -19,7 +19,15 @@ const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
     { value: 'calm', emoji: '🧘', label: 'Calm' },
 ];
 
-export default function NewTrade() {
+export default function NewTradePage() {
+    return (
+        <Suspense fallback={<div className="app-layout"><Sidebar /><main className="main-content"><div className="page-body" style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}><div className="spinner" /></div></main></div>}>
+            <NewTrade />
+        </Suspense>
+    );
+}
+
+function NewTrade() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('edit');

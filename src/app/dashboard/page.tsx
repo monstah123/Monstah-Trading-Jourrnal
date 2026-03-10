@@ -163,7 +163,7 @@ export default function Dashboard() {
                                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                                 <XAxis dataKey="date" tick={{ fill: '#55556a', fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
                                                 <YAxis tick={{ fill: '#55556a', fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                                                <Tooltip contentStyle={{ background: '#13131d', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} labelStyle={{ color: '#8888a0' }} formatter={(value: number) => [`$${value.toFixed(2)}`, 'Equity']} />
+                                                <Tooltip contentStyle={{ background: '#13131d', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} labelStyle={{ color: '#8888a0' }} formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Equity']} />
                                                 <Area type="monotone" dataKey="equity" stroke="#6c5ce7" fill="url(#equityGrad)" strokeWidth={2} />
                                             </AreaChart>
                                         </ResponsiveContainer>
@@ -193,7 +193,7 @@ export default function Dashboard() {
                                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                                 <XAxis dataKey="date" tick={{ fill: '#55556a', fontSize: 11 }} />
                                                 <YAxis tick={{ fill: '#55556a', fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                                                <Tooltip contentStyle={{ background: '#13131d', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} formatter={(value: number) => [`$${value.toFixed(2)}`, 'P&L']} />
+                                                <Tooltip contentStyle={{ background: '#13131d', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} formatter={(value) => [`$${Number(value).toFixed(2)}`, 'P&L']} />
                                                 <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                                                     {pnlByDay.map((entry, i) => (<Cell key={i} fill={entry.pnl >= 0 ? '#00e676' : '#ff5252'} />))}
                                                 </Bar>
