@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { saveTrade, generateId } from '@/lib/storage';
+import { saveTrade, generateId, getTradeById } from '@/lib/storage';
 import { calculatePnl, calculateRiskReward } from '@/lib/stats';
 import { Trade, TradeDirection, AssetClass, TradeSetup, Emotion } from '@/types/trade';
 
@@ -21,7 +21,11 @@ const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
 
 export default function NewTrade() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get('edit');
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [originalTradeId, setOriginalTradeId] = useState<string | null>(null);
 
     const [form, setForm] = useState({
         symbol: '',
@@ -45,6 +49,38 @@ export default function NewTrade() {
         exitTime: '',
         status: 'closed' as 'open' | 'closed',
     });
+
+    useEffect(() => {
+        if (editId) {
+            const trade = getTradeById(editId);
+            if (trade) {
+                setIsEditing(true);
+                setOriginalTradeId(trade.id);
+                setForm({
+                    symbol: trade.symbol,
+                    assetClass: trade.assetClass,
+                    direction: trade.direction,
+                    entryPrice: trade.entryPrice.toString(),
+                    exitPrice: trade.exitPrice ? trade.exitPrice.toString() : '',
+                    quantity: trade.quantity.toString(),
+                    stopLoss: trade.stopLoss ? trade.stopLoss.toString() : '',
+                    takeProfit: trade.takeProfit ? trade.takeProfit.toString() : '',
+                    fees: trade.fees.toString(),
+                    setup: trade.setup,
+                    emotionBefore: trade.emotionBefore,
+                    emotionAfter: trade.emotionAfter ?? 'neutral',
+                    confidence: trade.confidence,
+                    notes: trade.notes || '',
+                    strategy: trade.strategy || '',
+                    tags: trade.tags?.join(', ') || '',
+                    date: trade.date.split('T')[0],
+                    entryTime: trade.entryTime?.split('T')[1]?.substring(0, 5) || '',
+                    exitTime: trade.exitTime?.split('T')[1]?.substring(0, 5) || '',
+                    status: trade.status,
+                });
+            }
+        }
+    }, [editId]);
 
     const handleChange = (field: string, value: string | number) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -76,7 +112,7 @@ export default function NewTrade() {
         const rr = calculateRiskReward(tradeData);
 
         const trade: Trade = {
-            id: generateId(),
+            id: isEditing && originalTradeId ? originalTradeId : generateId(),
             date: form.date + 'T' + (form.entryTime || '09:30'),
             symbol: form.symbol.toUpperCase(),
             assetClass: form.assetClass,
@@ -106,7 +142,7 @@ export default function NewTrade() {
         };
 
         saveTrade(trade);
-        showToast('Trade logged successfully! 🔥', 'success');
+        showToast(isEditing ? 'Trade updated successfully! ✅' : 'Trade logged successfully! 🔥', 'success');
         setTimeout(() => router.push('/trades'), 1000);
     };
 
@@ -125,8 +161,8 @@ export default function NewTrade() {
             <Sidebar />
             <main className="main-content">
                 <div className="page-header">
-                    <h2>Log New Trade</h2>
-                    <p>Record every detail of your trade for maximum insights</p>
+                    <h2>{isEditing ? '✏️ Edit Trade' : 'Log New Trade'}</h2>
+                    <p>{isEditing ? `Editing ${form.symbol || 'trade'}` : 'Record every detail of your trade for maximum insights'}</p>
                 </div>
                 <div className="page-body">
                     <form onSubmit={handleSubmit}>
@@ -274,7 +310,7 @@ export default function NewTrade() {
 
                         <div className="flex gap-16 justify-between">
                             <button type="button" className="btn btn-secondary" onClick={() => router.push('/trades')}>Cancel</button>
-                            <button type="submit" className="btn btn-primary btn-lg">🔥 Save Trade</button>
+                            <button type="submit" className="btn btn-primary btn-lg">{isEditing ? '✅ Update Trade' : '🔥 Save Trade'}</button>
                         </div>
                     </form>
                 </div>

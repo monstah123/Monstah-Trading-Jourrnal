@@ -155,7 +155,12 @@ export default function TradesPage() {
                                             <td style={{ fontSize: '1.1rem' }}>
                                                 {trade.emotionBefore === 'confident' ? '😎' : trade.emotionBefore === 'fearful' ? '😰' : trade.emotionBefore === 'greedy' ? '🤑' : trade.emotionBefore === 'anxious' ? '😟' : trade.emotionBefore === 'disciplined' ? '🎯' : trade.emotionBefore === 'impulsive' ? '⚡' : trade.emotionBefore === 'calm' ? '🧘' : '😐'}
                                             </td>
-                                            <td><button className="btn btn-ghost btn-sm" style={{ color: 'var(--loss)', fontSize: '0.8rem' }} onClick={() => handleDelete(trade.id)}>🗑️</button></td>
+                                            <td>
+                                                <div className="flex gap-4">
+                                                    <Link href={`/trades/new?edit=${trade.id}`} className="btn btn-ghost btn-sm" style={{ color: 'var(--accent-primary)', fontSize: '0.8rem' }}>✏️</Link>
+                                                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--loss)', fontSize: '0.8rem' }} onClick={() => handleDelete(trade.id)}>🗑️</button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
