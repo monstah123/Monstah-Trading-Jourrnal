@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 
 const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: '📊' },
@@ -74,18 +75,27 @@ export default function Sidebar() {
                 </nav>
 
                 <div style={{ padding: '16px 12px', borderTop: '1px solid var(--border-primary)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px' }}>
-                        <div style={{
-                            width: '32px', height: '32px', borderRadius: '50%',
-                            background: 'var(--accent-gradient)', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem'
-                        }}>
-                            👤
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                                width: '32px', height: '32px', borderRadius: '50%',
+                                background: 'var(--accent-gradient)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem'
+                            }}>
+                                👤
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Trader</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pro Account</div>
+                            </div>
                         </div>
-                        <div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Trader</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pro Account</div>
-                        </div>
+                        <button
+                            onClick={() => signOut()}
+                            className="btn btn-ghost btn-sm"
+                            title="Sign Out"
+                        >
+                            Log Out
+                        </button>
                     </div>
                 </div>
             </aside>
