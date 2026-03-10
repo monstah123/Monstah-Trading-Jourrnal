@@ -40,8 +40,8 @@ export default function Sidebar() {
                 <div className="sidebar-logo">
                     <div className="sidebar-logo-icon">🔥</div>
                     <div>
-                        <h1>MONSTAH!!!</h1>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '1.5px', marginTop: '-2px' }}>TRADING JOURNAL</div>
+                        <h1 className="logo-shimmer">MONSTAH!!!</h1>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)', letterSpacing: '2px', marginTop: '-1px' }}>TRADING JOURNAL</div>
                     </div>
                 </div>
 
