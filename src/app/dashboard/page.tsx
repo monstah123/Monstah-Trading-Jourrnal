@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { getTrades } from '@/lib/storage';
 import { calculatePortfolioStats } from '@/lib/stats';
 import { Trade, PortfolioStats } from '@/types/trade';
+import { useAuth } from '@/components/AuthProvider';
 import Link from 'next/link';
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
@@ -17,6 +18,7 @@ const EMOTION_EMOJIS: Record<string, string> = {
 };
 
 export default function Dashboard() {
+    const { user } = useAuth();
     const [trades, setTrades] = useState<Trade[]>([]);
     const [stats, setStats] = useState<PortfolioStats | null>(null);
     const [aiInsight, setAiInsight] = useState<string>('');
@@ -25,12 +27,15 @@ export default function Dashboard() {
 
     useEffect(() => {
         setMounted(true);
-        const allTrades = getTrades();
-        setTrades(allTrades);
-        if (allTrades.length > 0) {
-            setStats(calculatePortfolioStats(allTrades));
+        if (user) {
+            getTrades(user.uid).then(allTrades => {
+                setTrades(allTrades);
+                if (allTrades.length > 0) {
+                    setStats(calculatePortfolioStats(allTrades));
+                }
+            });
         }
-    }, []);
+    }, [user]);
 
     const requestAiInsight = useCallback(async () => {
         if (trades.length === 0) return;
@@ -148,7 +153,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '32px' }}>
+                            <div className="grid-2-1" style={{ marginBottom: '32px' }}>
                                 <div className="card">
                                     <div className="card-header"><span className="card-title">📈 Equity Curve</span></div>
                                     <div style={{ height: '300px' }}>
@@ -184,7 +189,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
+                            <div className="grid-2" style={{ marginBottom: '32px' }}>
                                 <div className="card">
                                     <div className="card-header"><span className="card-title">💰 Daily P&amp;L</span></div>
                                     <div style={{ height: '250px' }}>
@@ -223,7 +228,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="grid-2">
                                 <div className="card">
                                     <div className="card-header">
                                         <span className="card-title">📋 Recent Trades</span>

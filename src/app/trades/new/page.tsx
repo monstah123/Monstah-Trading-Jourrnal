@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { saveTrade, generateId, getTradeById } from '@/lib/storage';
 import { calculatePnl, calculateRiskReward } from '@/lib/stats';
 import { Trade, TradeDirection, AssetClass, TradeSetup, Emotion, QuantityType } from '@/types/trade';
+import { useAuth } from '@/components/AuthProvider';
 
 const SETUPS: TradeSetup[] = ['breakout', 'pullback', 'reversal', 'trend_following', 'scalp', 'swing', 'gap_fill', 'momentum', 'mean_reversion', 'custom'];
 const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
@@ -28,6 +29,7 @@ export default function NewTradePage() {
 }
 
 function NewTrade() {
+    const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('edit');
@@ -60,37 +62,38 @@ function NewTrade() {
     });
 
     useEffect(() => {
-        if (editId) {
-            const trade = getTradeById(editId);
-            if (trade) {
-                setIsEditing(true);
-                setOriginalTradeId(trade.id);
-                setForm({
-                    symbol: trade.symbol,
-                    assetClass: trade.assetClass,
-                    direction: trade.direction,
-                    entryPrice: trade.entryPrice.toString(),
-                    exitPrice: trade.exitPrice ? trade.exitPrice.toString() : '',
-                    quantity: trade.quantity.toString(),
-                    quantityType: trade.quantityType || 'shares',
-                    stopLoss: trade.stopLoss ? trade.stopLoss.toString() : '',
-                    takeProfit: trade.takeProfit ? trade.takeProfit.toString() : '',
-                    fees: trade.fees.toString(),
-                    setup: trade.setup,
-                    emotionBefore: trade.emotionBefore,
-                    emotionAfter: trade.emotionAfter ?? 'neutral',
-                    confidence: trade.confidence,
-                    notes: trade.notes || '',
-                    strategy: trade.strategy || '',
-                    tags: trade.tags?.join(', ') || '',
-                    date: trade.date.split('T')[0],
-                    entryTime: trade.entryTime?.split('T')[1]?.substring(0, 5) || '',
-                    exitTime: trade.exitTime?.split('T')[1]?.substring(0, 5) || '',
-                    status: trade.status,
-                });
-            }
+        if (editId && user) {
+            getTradeById(user.uid, editId).then(trade => {
+                if (trade) {
+                    setIsEditing(true);
+                    setOriginalTradeId(trade.id);
+                    setForm({
+                        symbol: trade.symbol,
+                        assetClass: trade.assetClass,
+                        direction: trade.direction,
+                        entryPrice: trade.entryPrice.toString(),
+                        exitPrice: trade.exitPrice ? trade.exitPrice.toString() : '',
+                        quantity: trade.quantity.toString(),
+                        quantityType: trade.quantityType || 'shares',
+                        stopLoss: trade.stopLoss ? trade.stopLoss.toString() : '',
+                        takeProfit: trade.takeProfit ? trade.takeProfit.toString() : '',
+                        fees: trade.fees.toString(),
+                        setup: trade.setup,
+                        emotionBefore: trade.emotionBefore,
+                        emotionAfter: trade.emotionAfter ?? 'neutral',
+                        confidence: trade.confidence,
+                        notes: trade.notes || '',
+                        strategy: trade.strategy || '',
+                        tags: trade.tags?.join(', ') || '',
+                        date: trade.date.split('T')[0],
+                        entryTime: trade.entryTime?.split('T')[1]?.substring(0, 5) || '',
+                        exitTime: trade.exitTime?.split('T')[1]?.substring(0, 5) || '',
+                        status: trade.status,
+                    });
+                }
+            });
         }
-    }, [editId]);
+    }, [editId, user]);
 
     const handleChange = (field: string, value: string | number) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -101,7 +104,7 @@ function NewTrade() {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.symbol || !form.entryPrice || !form.quantity) {
             showToast('Please fill in required fields', 'error');
@@ -152,9 +155,11 @@ function NewTrade() {
             updatedAt: new Date().toISOString(),
         };
 
-        saveTrade(trade);
-        showToast(isEditing ? 'Trade updated successfully! ✅' : 'Trade logged successfully! 🔥', 'success');
-        setTimeout(() => router.push('/trades'), 1000);
+        if (user) {
+            await saveTrade(user.uid, trade);
+            showToast(isEditing ? 'Trade updated successfully! ✅' : 'Trade logged successfully! 🔥', 'success');
+            setTimeout(() => router.push('/trades'), 1000);
+        }
     };
 
     const livePnl = form.exitPrice && form.entryPrice && form.quantity

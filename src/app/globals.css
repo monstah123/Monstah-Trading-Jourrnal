@@ -946,6 +946,16 @@ body {
   .emotion-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .grid-2,
+  .grid-3,
+  .grid-2-1 {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 }
 
 .mobile-menu-btn {
@@ -984,6 +994,25 @@ body {
   .sidebar-overlay.visible {
     display: block;
   }
+}
+
+/* Responsive Grid Classes */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.grid-2-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
 }
 
 /* ========== UTILITY ========== */

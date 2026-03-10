@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { getJournalEntries, saveJournalEntry, getTrades, generateId } from '@/lib/storage';
 import { JournalEntry, Emotion, Trade } from '@/types/trade';
+import { useAuth } from '@/components/AuthProvider';
 
 const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
     { value: 'confident', emoji: '😎', label: 'Confident' },
@@ -15,6 +16,7 @@ const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
 ];
 
 export default function JournalPage() {
+    const { user } = useAuth();
     const [entries, setEntries] = useState<JournalEntry[]>([]);
     const [trades, setTrades] = useState<Trade[]>([]);
     const [mounted, setMounted] = useState(false);
@@ -36,9 +38,13 @@ export default function JournalPage() {
 
     useEffect(() => {
         setMounted(true);
-        setEntries(getJournalEntries().sort((a, b) => b.date.localeCompare(a.date)));
-        setTrades(getTrades());
-    }, []);
+        if (user) {
+            Promise.all([getJournalEntries(user.uid), getTrades(user.uid)]).then(([rawEntries, rawTrades]) => {
+                setEntries(rawEntries.sort((a, b) => b.date.localeCompare(a.date)));
+                setTrades(rawTrades);
+            });
+        }
+    }, [user]);
 
     if (!mounted) return null;
 
@@ -46,7 +52,8 @@ export default function JournalPage() {
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!user) return;
         const dayTrades = trades.filter(t => t.date.startsWith(form.date));
         const entry: JournalEntry = {
             id: generateId(),
@@ -63,8 +70,9 @@ export default function JournalPage() {
             updatedAt: new Date().toISOString(),
         };
 
-        saveJournalEntry(entry);
-        setEntries(getJournalEntries().sort((a, b) => b.date.localeCompare(a.date)));
+        await saveJournalEntry(user.uid, entry);
+        const updatedEntries = await getJournalEntries(user.uid);
+        setEntries(updatedEntries.sort((a, b) => b.date.localeCompare(a.date)));
         setShowForm(false);
         setForm({
             date: new Date().toISOString().split('T')[0],
@@ -239,7 +247,7 @@ export default function JournalPage() {
 
                                         {isSelected && (
                                             <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '16px' }}>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                                                <div className="grid-2" style={{ marginBottom: '16px' }}>
                                                     {entry.preMarketNotes && (
                                                         <div>
                                                             <div className="form-label" style={{ marginBottom: '4px' }}>Pre-Market</div>

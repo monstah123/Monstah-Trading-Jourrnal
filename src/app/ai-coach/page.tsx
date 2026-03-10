@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { getTrades } from '@/lib/storage';
 import { Trade } from '@/types/trade';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -11,6 +12,7 @@ interface Message {
 }
 
 export default function AICoachPage() {
+    const { user } = useAuth();
     const [trades, setTrades] = useState<Trade[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
@@ -20,8 +22,10 @@ export default function AICoachPage() {
 
     useEffect(() => {
         setMounted(true);
-        setTrades(getTrades());
-    }, []);
+        if (user) {
+            getTrades(user.uid).then(setTrades);
+        }
+    }, [user]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -113,7 +117,7 @@ export default function AICoachPage() {
                                         <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '16px' }}>
                                             Try one of these quick actions:
                                         </p>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', maxWidth: '700px', margin: '0 auto' }}>
+                                        <div className="grid-3" style={{ maxWidth: '700px', margin: '0 auto' }}>
                                             {quickActions.map((action, i) => (
                                                 <button key={i} className="btn btn-secondary" style={{ fontSize: '0.82rem', padding: '12px 16px', textAlign: 'left' }}
                                                     onClick={() => sendMessage(action.prompt)}>

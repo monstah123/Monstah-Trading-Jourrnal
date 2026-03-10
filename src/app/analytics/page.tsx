@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { getTrades } from '@/lib/storage';
 import { calculatePortfolioStats, calculateDailyStats } from '@/lib/stats';
 import { Trade } from '@/types/trade';
+import { useAuth } from '@/components/AuthProvider';
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     BarChart, Bar, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar,
@@ -12,13 +13,16 @@ import {
 } from 'recharts';
 
 export default function AnalyticsPage() {
+    const { user } = useAuth();
     const [trades, setTrades] = useState<Trade[]>([]);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        setTrades(getTrades());
-    }, []);
+        if (user) {
+            getTrades(user.uid).then(setTrades);
+        }
+    }, [user]);
 
     const stats = useMemo(() => trades.length > 0 ? calculatePortfolioStats(trades) : null, [trades]);
     const dailyStats = useMemo(() => calculateDailyStats(trades), [trades]);
@@ -128,7 +132,7 @@ export default function AnalyticsPage() {
                     ) : (
                         <>
                             {/* Key Metrics */}
-                            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+                            <div className="stats-grid">
                                 <div className="stat-card">
                                     <div className="stat-label">Max Drawdown</div>
                                     <div className="stat-value loss">-${(stats?.maxDrawdown ?? 0).toFixed(2)}</div>
@@ -176,7 +180,7 @@ export default function AnalyticsPage() {
                             </div>
 
                             {/* Charts Grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                            <div className="grid-2" style={{ marginBottom: '24px' }}>
                                 <div className="card">
                                     <div className="card-header">
                                         <span className="card-title">📈 Equity Curve</span>
@@ -222,7 +226,7 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                            <div className="grid-2" style={{ marginBottom: '24px' }}>
                                 <div className="card">
                                     <div className="card-header">
                                         <span className="card-title">📅 P&L by Day of Week</span>
@@ -266,7 +270,7 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="grid-2">
                                 <div className="card">
                                     <div className="card-header">
                                         <span className="card-title">🕸️ Trading Skills Radar</span>

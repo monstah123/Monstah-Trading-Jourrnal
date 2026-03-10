@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { getTrades, deleteTrade } from '@/lib/storage';
 import { Trade, AssetClass, TradeSetup } from '@/types/trade';
+import { useAuth } from '@/components/AuthProvider';
 import Link from 'next/link';
 
 export default function TradesPage() {
+    const { user } = useAuth();
     const [trades, setTrades] = useState<Trade[]>([]);
     const [mounted, setMounted] = useState(false);
     const [filterAsset, setFilterAsset] = useState<AssetClass | 'all'>('all');
@@ -19,8 +21,10 @@ export default function TradesPage() {
 
     useEffect(() => {
         setMounted(true);
-        setTrades(getTrades());
-    }, []);
+        if (user) {
+            getTrades(user.uid).then(setTrades);
+        }
+    }, [user]);
 
     if (!mounted) return null;
 
@@ -44,10 +48,11 @@ export default function TradesPage() {
     const winCount = filtered.filter(t => (t.pnl ?? 0) > 0).length;
     const closedCount = filtered.filter(t => t.status === 'closed').length;
 
-    const handleDelete = (id: string) => {
-        if (confirm('Delete this trade?')) {
-            deleteTrade(id);
-            setTrades(getTrades());
+    const handleDelete = async (id: string) => {
+        if (confirm('Delete this trade?') && user) {
+            await deleteTrade(user.uid, id);
+            const updatedTrades = await getTrades(user.uid);
+            setTrades(updatedTrades);
             setToast({ message: 'Trade deleted', type: 'success' });
             setTimeout(() => setToast(null), 3000);
         }
