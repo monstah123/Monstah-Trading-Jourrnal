@@ -2,8 +2,10 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
-import { signOut } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: '📊' },
@@ -20,7 +22,29 @@ const secondaryItems = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                setUserEmail(user.email);
+            } else {
+                setUserEmail(null);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            router.push('/login');
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
 
     return (
         <>
@@ -84,13 +108,15 @@ export default function Sidebar() {
                             }}>
                                 👤
                             </div>
-                            <div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Trader</div>
+                            <div style={{ maxWidth: '120px', overflow: 'hidden' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                    {userEmail ? userEmail.split('@')[0] : 'Trader'}
+                                </div>
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pro Account</div>
                             </div>
                         </div>
                         <button
-                            onClick={() => signOut()}
+                            onClick={handleSignOut}
                             className="btn btn-ghost btn-sm"
                             title="Sign Out"
                         >

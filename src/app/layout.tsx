@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Providers from "./providers";
+import { AuthProvider } from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
     title: "MONSTAH!!! Trading Journal | Track, Analyze, Dominate",
@@ -16,9 +16,9 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body>
-                <Providers>
+                <AuthProvider>
                     {children}
-                </Providers>
+                </AuthProvider>
             </body>
         </html>
     );
