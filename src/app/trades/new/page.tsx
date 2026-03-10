@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { saveTrade, generateId, getTradeById } from '@/lib/storage';
 import { calculatePnl, calculateRiskReward } from '@/lib/stats';
-import { Trade, TradeDirection, AssetClass, TradeSetup, Emotion } from '@/types/trade';
+import { Trade, TradeDirection, AssetClass, TradeSetup, Emotion, QuantityType } from '@/types/trade';
 
 const SETUPS: TradeSetup[] = ['breakout', 'pullback', 'reversal', 'trend_following', 'scalp', 'swing', 'gap_fill', 'momentum', 'mean_reversion', 'custom'];
 const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
@@ -42,6 +42,7 @@ function NewTrade() {
         entryPrice: '',
         exitPrice: '',
         quantity: '',
+        quantityType: 'shares' as QuantityType,
         stopLoss: '',
         takeProfit: '',
         fees: '0',
@@ -71,6 +72,7 @@ function NewTrade() {
                     entryPrice: trade.entryPrice.toString(),
                     exitPrice: trade.exitPrice ? trade.exitPrice.toString() : '',
                     quantity: trade.quantity.toString(),
+                    quantityType: trade.quantityType || 'shares',
                     stopLoss: trade.stopLoss ? trade.stopLoss.toString() : '',
                     takeProfit: trade.takeProfit ? trade.takeProfit.toString() : '',
                     fees: trade.fees.toString(),
@@ -129,6 +131,7 @@ function NewTrade() {
             entryPrice: parseFloat(form.entryPrice),
             exitPrice: form.exitPrice ? parseFloat(form.exitPrice) : null,
             quantity: parseFloat(form.quantity),
+            quantityType: form.quantityType,
             stopLoss: form.stopLoss ? parseFloat(form.stopLoss) : null,
             takeProfit: form.takeProfit ? parseFloat(form.takeProfit) : null,
             fees: parseFloat(form.fees || '0'),
@@ -229,7 +232,19 @@ function NewTrade() {
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Quantity *</label>
-                                    <input type="number" step="any" className="form-input" placeholder="0" value={form.quantity} onChange={e => handleChange('quantity', e.target.value)} required />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <input type="number" step="any" className="form-input" placeholder="0" value={form.quantity} onChange={e => handleChange('quantity', e.target.value)} required />
+                                        <select className="form-select" value={form.quantityType} onChange={e => handleChange('quantityType', e.target.value as QuantityType)}>
+                                            <option value="shares">Shares</option>
+                                            <option value="lots">Lots</option>
+                                            <option value="contracts">Contracts</option>
+                                            <option value="units">Units</option>
+                                            <option value="Margin USD">Margin USD ℹ️</option>
+                                            <option value="% balance">% balance ℹ️</option>
+                                            <option value="Risk, USD">Risk, USD ℹ️</option>
+                                            <option value="Risk, % balance">Risk, % balance ℹ️</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Fees</label>

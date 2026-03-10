@@ -145,7 +145,7 @@ export default function TradesPage() {
                                             <td><span className="tag">{trade.assetClass}</span></td>
                                             <td>${trade.entryPrice.toFixed(2)}</td>
                                             <td>{trade.exitPrice ? `$${trade.exitPrice.toFixed(2)}` : '—'}</td>
-                                            <td>{trade.quantity}</td>
+                                            <td>{trade.quantity} {trade.quantityType}</td>
                                             <td style={{ fontWeight: 700, color: trade.pnl !== null ? (trade.pnl >= 0 ? 'var(--profit)' : 'var(--loss)') : 'var(--text-muted)' }}>
                                                 {trade.pnl !== null ? `${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}` : '—'}
                                             </td>

@@ -3,6 +3,7 @@ export type TradeStatus = 'open' | 'closed';
 export type AssetClass = 'stocks' | 'options' | 'futures' | 'forex' | 'crypto';
 export type Emotion = 'confident' | 'fearful' | 'greedy' | 'neutral' | 'anxious' | 'disciplined' | 'impulsive' | 'calm';
 export type TradeSetup = 'breakout' | 'pullback' | 'reversal' | 'trend_following' | 'scalp' | 'swing' | 'gap_fill' | 'momentum' | 'mean_reversion' | 'custom';
+export type QuantityType = 'shares' | 'lots' | 'contracts' | 'units' | 'Margin USD' | '% balance' | 'Risk, USD' | 'Risk, % balance';
 
 export interface Trade {
     id: string;
@@ -14,6 +15,7 @@ export interface Trade {
     entryPrice: number;
     exitPrice: number | null;
     quantity: number;
+    quantityType: QuantityType;
     stopLoss: number | null;
     takeProfit: number | null;
     fees: number;
