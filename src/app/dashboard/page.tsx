@@ -7,6 +7,8 @@ import { calculatePortfolioStats } from "@/lib/stats";
 import { Trade, PortfolioStats } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
+import { db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -78,21 +80,42 @@ export default function Dashboard() {
     if (!user || trades.length === 0) return;
     setSharing(true);
     try {
-      const res = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, displayName: user.displayName || user.email?.split("@")[0] }),
-      });
-      const data = await res.json();
-      if (data.shareId) {
-        const link = `${window.location.origin}/share/${data.shareId}`;
-        setShareLink(link);
-        await navigator.clipboard.writeText(link);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 3000);
-      }
+      // Build stats from already-loaded trades (client-side, avoids server SDK issue)
+      const closed = trades.filter((t) => t.status === "closed");
+      const wins = closed.filter((t) => (t.pnl ?? 0) > 0);
+      const totalPnl = closed.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+      const winRate = closed.length > 0 ? (wins.length / closed.length) * 100 : 0;
+      const grossWin = wins.reduce((s, t) => s + (t.pnl ?? 0), 0);
+      const grossLoss = Math.abs(closed.filter((t) => (t.pnl ?? 0) < 0).reduce((s, t) => s + (t.pnl ?? 0), 0));
+      const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
+      const bestTrade = closed.reduce((best, t) => ((t.pnl ?? 0) > (best?.pnl ?? 0) ? t : best), closed[0] ?? null);
+
+      const shareId = `${user.uid.substring(0, 8)}-${Date.now().toString(36)}`;
+      const shareDoc = {
+        shareId,
+        userId: user.uid,
+        displayName: user.displayName || user.email?.split("@")[0] || "Monstah Trader",
+        createdAt: new Date().toISOString(),
+        stats: {
+          totalTrades: closed.length,
+          winRate: Number(winRate.toFixed(1)),
+          totalPnl: Number(totalPnl.toFixed(2)),
+          profitFactor: profitFactor === Infinity ? 999 : Number(profitFactor.toFixed(2)),
+          bestTrade: bestTrade ? { symbol: bestTrade.symbol, pnl: Number((bestTrade.pnl ?? 0).toFixed(2)) } : null,
+          wins: wins.length,
+          losses: closed.length - wins.length,
+        },
+      };
+
+      await setDoc(doc(db, "public_shares", shareId), shareDoc);
+
+      const link = `${window.location.origin}/share/${shareId}`;
+      setShareLink(link);
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
     } catch (e) {
-      console.error(e);
+      console.error("Share failed:", e);
     } finally {
       setSharing(false);
     }
