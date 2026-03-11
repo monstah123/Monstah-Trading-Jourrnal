@@ -113,12 +113,30 @@ export default function Dashboard() {
 
       const link = `${window.location.origin}/share/${shareId}`;
       setShareLink(link);
+
+      // Robust clipboard copy — tries modern API first, falls back to execCommand
+      let copySuccess = false;
       try {
         await navigator.clipboard.writeText(link);
+        copySuccess = true;
+      } catch {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = link;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          copySuccess = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch {
+          copySuccess = false;
+        }
+      }
+      if (copySuccess) {
         setCopied(true);
         setTimeout(() => setCopied(false), 3000);
-      } catch {
-        // Clipboard may fail on some browsers — link still shows on screen
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

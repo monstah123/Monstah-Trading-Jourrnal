@@ -76,7 +76,7 @@ export default function SharePage() {
                 <div style={{ textAlign: "center", marginBottom: 32, padding: "24px 0", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <div style={{ fontSize: "0.75rem", color: "#8888a0", letterSpacing: 2, marginBottom: 6 }}>TOTAL P&L</div>
                     <div style={{ fontSize: "3.5rem", fontWeight: 900, color: isProfitable ? "#00e676" : "#ff5252", lineHeight: 1 }}>
-                        {isProfitable ? "+" : ""}{stats.totalPnl >= 0 ? "+" : ""}${Math.abs(stats.totalPnl).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {stats.totalPnl >= 0 ? "+" : "-"}${Math.abs(stats.totalPnl).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                 </div>
 
