@@ -37,6 +37,10 @@ export default function LoginPage() {
 
     try {
       const provider = new GoogleAuthProvider();
+      // Forces the Google login screen to always ask the user to pick an account
+      provider.setCustomParameters({
+        prompt: "select_account",
+      });
       await signInWithPopup(auth, provider);
       router.push("/dashboard");
     } catch (err: any) {
