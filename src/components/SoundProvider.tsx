@@ -24,30 +24,51 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         return audioCtxRef.current;
     }, []);
 
-    // Crisp coin/cash register chime — two quick ascending tones
+    // "Cha-CHING" — low thud + high sparkle ring clearly separated
     const playClick = useCallback(() => {
         try {
             const ctx = getCtx();
             const now = ctx.currentTime;
 
-            const playTone = (freq: number, startTime: number, duration: number, gain: number) => {
-                const osc = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                osc.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(freq, startTime);
-                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, startTime + duration * 0.3);
-                gainNode.gain.setValueAtTime(0, startTime);
-                gainNode.gain.linearRampToValueAtTime(gain, startTime + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-                osc.start(startTime);
-                osc.stop(startTime + duration);
-            };
+            // First hit — punchy low thud ("CHA")
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.type = "triangle";
+            osc1.frequency.setValueAtTime(440, now);
+            osc1.frequency.exponentialRampToValueAtTime(220, now + 0.09);
+            gain1.gain.setValueAtTime(0.4, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+            osc1.start(now);
+            osc1.stop(now + 0.15);
 
-            // Quick double-chime like a cash register
-            playTone(880, now, 0.12, 0.18);
-            playTone(1320, now + 0.08, 0.14, 0.14);
+            // Second hit — sparkle high ring ("CHING") clearly 150ms later
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.type = "sine";
+            osc2.frequency.setValueAtTime(1760, now + 0.15);
+            osc2.frequency.exponentialRampToValueAtTime(1320, now + 0.5);
+            gain2.gain.setValueAtTime(0, now + 0.15);
+            gain2.gain.linearRampToValueAtTime(0.32, now + 0.16);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 0.65);
+
+            // Shimmer overtone on top of ring
+            const osc3 = ctx.createOscillator();
+            const gain3 = ctx.createGain();
+            osc3.connect(gain3);
+            gain3.connect(ctx.destination);
+            osc3.type = "sine";
+            osc3.frequency.setValueAtTime(3520, now + 0.15);
+            gain3.gain.setValueAtTime(0, now + 0.15);
+            gain3.gain.linearRampToValueAtTime(0.12, now + 0.16);
+            gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc3.start(now + 0.15);
+            osc3.stop(now + 0.4);
         } catch (_) { }
     }, [getCtx]);
 
