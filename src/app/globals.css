@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 :root {
   /* Core Colors */
@@ -75,7 +75,11 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
@@ -151,12 +155,14 @@ body {
 
 /* MONSTAH!!! shimmer animation */
 .logo-shimmer {
-  background: linear-gradient(90deg,
-      #6c5ce7 0%,
-      #6c5ce7 30%,
-      #ffffff 50%,
-      #00cec9 70%,
-      #00cec9 100%);
+  background: linear-gradient(
+    90deg,
+    #6c5ce7 0%,
+    #6c5ce7 30%,
+    #ffffff 50%,
+    #00cec9 70%,
+    #00cec9 100%
+  );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -321,7 +327,7 @@ body {
 }
 
 .stat-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -354,7 +360,7 @@ body {
 .stat-card .stat-value {
   font-size: 1.75rem;
   font-weight: 800;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   letter-spacing: -1px;
 }
 
@@ -392,7 +398,7 @@ body {
   border: none;
   transition: all var(--transition-fast);
   text-decoration: none;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .btn-primary {
@@ -482,7 +488,7 @@ body {
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 0.9rem;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   transition: all var(--transition-fast);
   outline: none;
 }
@@ -547,7 +553,7 @@ body {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-primary);
   white-space: nowrap;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.82rem;
 }
 
@@ -632,7 +638,7 @@ body {
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   cursor: pointer;
   transition: all var(--transition-fast);
   border: 1px solid transparent;
@@ -677,7 +683,11 @@ body {
 
 .ai-header {
   padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 206, 201, 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(108, 92, 231, 0.1),
+    rgba(0, 206, 201, 0.05)
+  );
   border-bottom: 1px solid var(--border-accent);
   display: flex;
   align-items: center;
@@ -694,7 +704,6 @@ body {
 }
 
 @keyframes pulse-dot {
-
   0%,
   100% {
     opacity: 1;
@@ -746,7 +755,7 @@ body {
   color: var(--text-primary);
   font-size: 0.9rem;
   outline: none;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .ai-input-area input:focus {
@@ -771,7 +780,7 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
   transition: all var(--transition-fast);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .emotion-btn:hover {
@@ -830,7 +839,12 @@ body {
 }
 
 .loading-shimmer {
-  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-card-hover) 50%, var(--bg-tertiary) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-card-hover) 50%,
+    var(--bg-tertiary) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease infinite;
   border-radius: var(--radius-sm);
@@ -1041,7 +1055,7 @@ body {
 }
 
 .mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
 }
 
 .font-bold {
@@ -1134,6 +1148,6 @@ body {
   background: var(--bg-input);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.85em;
 }
