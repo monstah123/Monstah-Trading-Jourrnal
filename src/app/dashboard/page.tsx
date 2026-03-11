@@ -40,6 +40,9 @@ export default function Dashboard() {
   const [aiInsight, setAiInsight] = useState<string>("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -70,6 +73,30 @@ export default function Dashboard() {
       setLoadingAi(false);
     }
   }, [trades]);
+
+  const handleShare = async () => {
+    if (!user || trades.length === 0) return;
+    setSharing(true);
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid, displayName: user.displayName || user.email?.split("@")[0] }),
+      });
+      const data = await res.json();
+      if (data.shareId) {
+        const link = `${window.location.origin}/share/${data.shareId}`;
+        setShareLink(link);
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSharing(false);
+    }
+  };
 
   if (!mounted) return null;
 
@@ -131,8 +158,32 @@ export default function Dashboard() {
       <Sidebar />
       <main className="main-content">
         <div className="page-header">
-          <h2>Dashboard</h2>
-          <p>Your trading performance at a glance</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <h2>Dashboard</h2>
+              <p>Your trading performance at a glance</p>
+            </div>
+            {trades.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleShare}
+                  disabled={sharing}
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  {sharing ? "⏳ Generating..." : "🔗 Share P&L Card"}
+                </button>
+                {shareLink && (
+                  <div style={{ fontSize: "0.75rem", color: "var(--accent-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>{copied ? "✅ Copied!" : "Link ready"}</span>
+                    <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-primary)", textDecoration: "none", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {shareLink}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <div className="page-body">
           {trades.length === 0 ? (
