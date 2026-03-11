@@ -223,11 +223,38 @@ export default function Dashboard() {
                   {sharing ? "⏳ Generating..." : "🔗 Share P&L Card"}
                 </button>
                 {shareLink && (
-                  <div style={{ fontSize: "0.75rem", color: "var(--accent-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
-                    <span>{copied ? "✅ Copied!" : "📋 Link ready — copy below"}</span>
-                    <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-primary)", textDecoration: "none", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                      {shareLink}
-                    </a>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(108,92,231,0.1)", border: "1px solid rgba(108,92,231,0.3)", borderRadius: 8, padding: "6px 10px", maxWidth: 320 }}>
+                      <a
+                        href={shareLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--accent-primary)", textDecoration: "none", fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}
+                      >
+                        {shareLink}
+                      </a>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(shareLink).catch(() => {
+                            const ta = document.createElement("textarea");
+                            ta.value = shareLink;
+                            ta.style.position = "fixed";
+                            ta.style.opacity = "0";
+                            document.body.appendChild(ta);
+                            ta.focus();
+                            ta.select();
+                            document.execCommand("copy");
+                            document.body.removeChild(ta);
+                          });
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", padding: "0 4px", flexShrink: 0 }}
+                        title="Copy link"
+                      >
+                        {copied ? "✅" : "📋"}
+                      </button>
+                    </div>
                   </div>
                 )}
                 {shareError && (
