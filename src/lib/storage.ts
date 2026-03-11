@@ -1,5 +1,5 @@
 import { Trade, JournalEntry, Playbook } from "@/types/trade";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import {
   collection,
   doc,
@@ -10,6 +10,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Trades
 export async function getTrades(userId: string): Promise<Trade[]> {
@@ -133,4 +134,21 @@ export async function savePlaybook(
 // Generate unique ID
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
+
+// Upload Image
+export async function uploadImage(
+  userId: string,
+  file: File,
+): Promise<string | null> {
+  if (!userId || !file) return null;
+  try {
+    const filename = `${generateId()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    const storageRef = ref(storage, `users/${userId}/screenshots/${filename}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    return null;
+  }
 }

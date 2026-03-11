@@ -3,7 +3,12 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
-import { saveTrade, generateId, getTradeById } from "@/lib/storage";
+import {
+  saveTrade,
+  generateId,
+  getTradeById,
+  uploadImage,
+} from "@/lib/storage";
 import { calculatePnl, calculateRiskReward } from "@/lib/stats";
 import {
   Trade,
@@ -75,6 +80,8 @@ function NewTrade() {
   } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [originalTradeId, setOriginalTradeId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [form, setForm] = useState({
     symbol: "",
@@ -92,6 +99,7 @@ function NewTrade() {
     emotionAfter: "neutral" as Emotion,
     confidence: 5,
     notes: "",
+    screenshot: null as string | null,
     strategy: "",
     tags: "",
     date: new Date().toISOString().split("T")[0],
@@ -122,6 +130,7 @@ function NewTrade() {
             emotionAfter: trade.emotionAfter ?? "neutral",
             confidence: trade.confidence,
             notes: trade.notes || "",
+            screenshot: trade.screenshot || null,
             strategy: trade.strategy || "",
             tags: trade.tags?.join(", ") || "",
             date: trade.date.split("T")[0],
@@ -160,6 +169,20 @@ function NewTrade() {
       direction: form.direction,
     };
 
+    setIsUploading(true);
+    let finalScreenshotUrl = form.screenshot;
+    if (imageFile && user) {
+      showToast("Uploading screenshot... ⏳", "success");
+      const url = await uploadImage(user.uid, imageFile);
+      if (url) {
+        finalScreenshotUrl = url;
+      } else {
+        showToast("Failed to upload screenshot", "error");
+        setIsUploading(false);
+        return;
+      }
+    }
+
     const pnl = form.status === "closed" ? calculatePnl(tradeData) : null;
     const rr = calculateRiskReward(tradeData);
 
@@ -192,7 +215,7 @@ function NewTrade() {
       emotionAfter: form.status === "closed" ? form.emotionAfter : null,
       confidence: form.confidence,
       notes: form.notes,
-      screenshot: null,
+      screenshot: finalScreenshotUrl,
       entryTime: form.date + "T" + (form.entryTime || "09:30"),
       exitTime: form.exitTime ? form.date + "T" + form.exitTime : null,
       strategy: form.strategy,
@@ -209,7 +232,12 @@ function NewTrade() {
           : "Trade logged successfully! 🔥",
         "success",
       );
-      setTimeout(() => router.push("/trades"), 1000);
+      setTimeout(() => {
+        setIsUploading(false);
+        router.push("/trades");
+      }, 1000);
+    } else {
+      setIsUploading(false);
     }
   };
 
@@ -598,16 +626,77 @@ function NewTrade() {
               </div>
             </div>
 
+            <div className="card mb-24">
+              <div className="card-header">
+                <span className="card-title">🖼️ Attachments</span>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Screenshot (Optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-input"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setImageFile(e.target.files[0]);
+                    }
+                  }}
+                />
+                {form.screenshot && !imageFile && (
+                  <div style={{ marginTop: "12px" }}>
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--text-muted)",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Current Screenshot:
+                    </p>
+                    <img
+                      src={form.screenshot}
+                      alt="Trade attachment"
+                      style={{
+                        maxWidth: "200px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    />
+                  </div>
+                )}
+                {imageFile && (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      fontSize: "0.8rem",
+                      color: "var(--profit)",
+                    }}
+                  >
+                    ✅ Selected: {imageFile.name} (will upload on save)
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-16 justify-between">
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => router.push("/trades")}
+                disabled={isUploading}
               >
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary btn-lg">
-                {isEditing ? "✅ Update Trade" : "🔥 Save Trade"}
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg"
+                disabled={isUploading}
+              >
+                {isUploading
+                  ? "Processing..."
+                  : isEditing
+                    ? "✅ Update Trade"
+                    : "🔥 Save Trade"}
               </button>
             </div>
           </form>

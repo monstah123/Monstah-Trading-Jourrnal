@@ -246,6 +246,7 @@ export default function TradesPage() {
                     <th>Setup</th>
                     <th>Status</th>
                     <th>Emotion</th>
+                    <th>Img</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -323,6 +324,28 @@ export default function TradesPage() {
                                     : trade.emotionBefore === "calm"
                                       ? "🧘"
                                       : "😐"}
+                      </td>
+                      <td>
+                        {trade.screenshot ? (
+                          <a
+                            href={trade.screenshot}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              textDecoration: "none",
+                              fontSize: "1.2rem",
+                            }}
+                            title="View Screenshot"
+                          >
+                            🖼️
+                          </a>
+                        ) : (
+                          <span
+                            style={{ color: "var(--text-muted)", opacity: 0.5 }}
+                          >
+                            -
+                          </span>
+                        )}
                       </td>
                       <td>
                         <div className="flex gap-4">
