@@ -27,26 +27,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Auth listener — runs ONCE only. Never recreated on route changes.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
-
-      const isAuthPage = pathname.startsWith("/login");
-
-      if (firebaseUser && isAuthPage) {
-        router.push("/dashboard");
-      } else if (!firebaseUser && !isAuthPage && !pathname.startsWith("/api")) {
-        router.push("/login");
-      }
     });
-
     return () => unsubscribe();
-  }, [pathname, router]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Redirect logic — separated so it doesn't re-create the auth listener
+  useEffect(() => {
+    if (loading) return; // Wait until auth is resolved
+    const isAuthPage = pathname.startsWith("/login");
+    if (user && isAuthPage) {
+      router.push("/dashboard");
+    } else if (!user && !isAuthPage && !pathname.startsWith("/api")) {
+      router.push("/login");
+    }
+  }, [user, loading, pathname, router]);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          background: "var(--bg-primary, #0a0a0f)",
+        }}
+      >
+        <div className="spinner" />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

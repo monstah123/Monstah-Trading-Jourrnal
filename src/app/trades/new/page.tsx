@@ -102,7 +102,7 @@ function NewTrade() {
     screenshot: null as string | null,
     strategy: "",
     tags: "",
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     entryTime: "",
     exitTime: "",
     status: "closed" as "open" | "closed",
@@ -140,6 +140,11 @@ function NewTrade() {
           });
         }
       });
+    } else if (!editId) {
+      setForm((prev) => ({
+        ...prev,
+        date: new Date().toISOString().split("T")[0]
+      }));
     }
   }, [editId, user]);
 
@@ -204,7 +209,7 @@ function NewTrade() {
       pnlPercent:
         pnl !== null && parseFloat(form.entryPrice) > 0
           ? (pnl / (parseFloat(form.entryPrice) * parseFloat(form.quantity))) *
-            100
+          100
           : null,
       setup: form.setup,
       tags: form.tags
@@ -244,12 +249,12 @@ function NewTrade() {
   const livePnl =
     form.exitPrice && form.entryPrice && form.quantity
       ? calculatePnl({
-          entryPrice: parseFloat(form.entryPrice),
-          exitPrice: parseFloat(form.exitPrice),
-          quantity: parseFloat(form.quantity),
-          direction: form.direction,
-          fees: parseFloat(form.fees || "0"),
-        })
+        entryPrice: parseFloat(form.entryPrice),
+        exitPrice: parseFloat(form.exitPrice),
+        quantity: parseFloat(form.quantity),
+        direction: form.direction,
+        fees: parseFloat(form.fees || "0"),
+      })
       : null;
 
   return (

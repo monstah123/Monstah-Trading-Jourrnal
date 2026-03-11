@@ -31,7 +31,7 @@ export default function JournalPage() {
   const [loadingAi, setLoadingAi] = useState(false);
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     preMarketNotes: "",
     postMarketNotes: "",
     mood: "neutral" as Emotion,
@@ -43,6 +43,10 @@ export default function JournalPage() {
 
   useEffect(() => {
     setMounted(true);
+    setForm((prev) => ({
+      ...prev,
+      date: new Date().toISOString().split("T")[0],
+    }));
     if (user) {
       Promise.all([getJournalEntries(user.uid), getTrades(user.uid)]).then(
         ([rawEntries, rawTrades]) => {
