@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -79,6 +80,7 @@ export default function Dashboard() {
   const handleShare = async () => {
     if (!user || trades.length === 0) return;
     setSharing(true);
+    setShareError(null);
     try {
       // Build stats from already-loaded trades (client-side, avoids server SDK issue)
       const closed = trades.filter((t) => t.status === "closed");
@@ -111,11 +113,17 @@ export default function Dashboard() {
 
       const link = `${window.location.origin}/share/${shareId}`;
       setShareLink(link);
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
-    } catch (e) {
+      try {
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      } catch {
+        // Clipboard may fail on some browsers — link still shows on screen
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.error("Share failed:", e);
+      setShareError(msg);
     } finally {
       setSharing(false);
     }
@@ -198,10 +206,15 @@ export default function Dashboard() {
                 </button>
                 {shareLink && (
                   <div style={{ fontSize: "0.75rem", color: "var(--accent-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
-                    <span>{copied ? "✅ Copied!" : "Link ready"}</span>
-                    <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-primary)", textDecoration: "none", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span>{copied ? "✅ Copied!" : "📋 Link ready — copy below"}</span>
+                    <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-primary)", textDecoration: "none", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                       {shareLink}
                     </a>
+                  </div>
+                )}
+                {shareError && (
+                  <div style={{ fontSize: "0.72rem", color: "#ff5252", maxWidth: 300, textAlign: "right", background: "rgba(255,82,82,0.1)", padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(255,82,82,0.3)" }}>
+                    ❌ {shareError}
                   </div>
                 )}
               </div>
