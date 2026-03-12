@@ -10,7 +10,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 // Trades
 export async function getTrades(userId: string): Promise<Trade[]> {
@@ -143,47 +143,54 @@ export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// Upload Image with timeout and size check
+// Upload Image with progress tracking and timeout
 export async function uploadImage(
   userId: string,
   file: File,
 ): Promise<string | null> {
   if (!userId || !file) return null;
 
-  // Limit file size to 10MB to prevent extreme wait times
   const MAX_SIZE = 10 * 1024 * 1024;
   if (file.size > MAX_SIZE) {
     console.error("File is too large (max 10MB)");
     return null;
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       const filename = `${generateId()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
       const storageRef = ref(storage, `users/${userId}/screenshots/${filename}`);
 
-      // Set a 120 second timeout for the upload (2 minutes)
+      console.log(`🚀 Starting upload: ${filename} (${(file.size / 1024).toFixed(1)} KB)`);
+
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Timeout safeguard
       const timeoutId = setTimeout(() => {
-        console.error("Upload timed out after 120 seconds");
+        console.error("❌ Upload timed out after 120 seconds");
+        uploadTask.cancel();
         resolve(null);
       }, 120000);
 
-      console.log(`Starting upload: ${filename} (${(file.size / 1024).toFixed(1)} KB)`);
-
-      uploadBytes(storageRef, file)
-        .then(async (snapshot) => {
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`📤 Upload progress: ${progress.toFixed(1)}%`);
+        },
+        (error) => {
           clearTimeout(timeoutId);
-          console.log("Upload successful, fetching URL...");
-          const url = await getDownloadURL(snapshot.ref);
-          resolve(url);
-        })
-        .catch((error) => {
-          clearTimeout(timeoutId);
-          console.error("Error during uploadBytes:", error);
+          console.error("❌ Firebase Upload Error:", error.code, error.message);
           resolve(null);
-        });
+        },
+        async () => {
+          clearTimeout(timeoutId);
+          console.log("✅ Upload successful, getting download URL...");
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        }
+      );
     } catch (error) {
-      console.error("Error in uploadImage:", error);
+      console.error("❌ Error in uploadImage function:", error);
       resolve(null);
     }
   });
