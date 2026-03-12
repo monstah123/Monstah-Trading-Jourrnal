@@ -229,19 +229,25 @@ function NewTrade() {
       updatedAt: new Date().toISOString(),
     };
 
-    if (user) {
-      await saveTrade(user.uid, trade);
-      showToast(
-        isEditing
-          ? "Trade updated successfully! ✅"
-          : "Trade logged successfully! 🔥",
-        "success",
-      );
-      setTimeout(() => {
+    try {
+      if (user) {
+        await saveTrade(user.uid, trade);
+        showToast(
+          isEditing
+            ? "Trade updated successfully! ✅"
+            : "Trade logged successfully! 🔥",
+          "success",
+        );
+        setTimeout(() => {
+          setIsUploading(false);
+          router.push("/trades");
+        }, 1000);
+      } else {
         setIsUploading(false);
-        router.push("/trades");
-      }, 1000);
-    } else {
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      showToast("Failed to save trade. Please check your connection.", "error");
       setIsUploading(false);
     }
   };
@@ -698,7 +704,7 @@ function NewTrade() {
                 disabled={isUploading}
               >
                 {isUploading
-                  ? "Processing..."
+                  ? (imageFile ? "🚀 Uploading Image..." : "Processing...")
                   : isEditing
                     ? "✅ Update Trade"
                     : "🔥 Save Trade"}

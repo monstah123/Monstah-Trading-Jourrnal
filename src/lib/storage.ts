@@ -29,13 +29,20 @@ export async function saveTrade(userId: string, trade: Trade): Promise<void> {
   if (!userId) return;
   try {
     const docRef = doc(db, "trades", trade.id);
-    await setDoc(docRef, {
+    const savePromise = setDoc(docRef, {
       ...trade,
       userId,
       updatedAt: new Date().toISOString(),
     });
+
+    // Add a 30 second timeout for Firestore saves
+    await Promise.race([
+      savePromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Save timed out")), 30000))
+    ]);
   } catch (error) {
     console.error("Error saving trade:", error);
+    throw error; // Throw so we can catch it in the UI
   }
 }
 
@@ -136,19 +143,48 @@ export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// Upload Image
+// Upload Image with timeout and size check
 export async function uploadImage(
   userId: string,
   file: File,
 ): Promise<string | null> {
   if (!userId || !file) return null;
-  try {
-    const filename = `${generateId()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const storageRef = ref(storage, `users/${userId}/screenshots/${filename}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  } catch (error) {
-    console.error("Error uploading image:", error);
+
+  // Limit file size to 10MB to prevent extreme wait times
+  const MAX_SIZE = 10 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    console.error("File is too large (max 10MB)");
     return null;
   }
+
+  return new Promise((resolve, reject) => {
+    try {
+      const filename = `${generateId()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const storageRef = ref(storage, `users/${userId}/screenshots/${filename}`);
+
+      // Set a 120 second timeout for the upload (2 minutes)
+      const timeoutId = setTimeout(() => {
+        console.error("Upload timed out after 120 seconds");
+        resolve(null);
+      }, 120000);
+
+      console.log(`Starting upload: ${filename} (${(file.size / 1024).toFixed(1)} KB)`);
+
+      uploadBytes(storageRef, file)
+        .then(async (snapshot) => {
+          clearTimeout(timeoutId);
+          console.log("Upload successful, fetching URL...");
+          const url = await getDownloadURL(snapshot.ref);
+          resolve(url);
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          console.error("Error during uploadBytes:", error);
+          resolve(null);
+        });
+    } catch (error) {
+      console.error("Error in uploadImage:", error);
+      resolve(null);
+    }
+  });
 }
