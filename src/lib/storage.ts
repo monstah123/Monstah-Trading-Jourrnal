@@ -147,6 +147,7 @@ export function generateId(): string {
 export async function uploadImage(
   userId: string,
   file: File,
+  onProgress?: (progress: number) => void
 ): Promise<string | null> {
   if (!userId || !file) return null;
 
@@ -176,6 +177,7 @@ export async function uploadImage(
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           console.log(`📤 Upload progress: ${progress.toFixed(1)}%`);
+          if (onProgress) onProgress(progress);
         },
         (error) => {
           clearTimeout(timeoutId);

@@ -82,6 +82,7 @@ function NewTrade() {
   const [originalTradeId, setOriginalTradeId] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [form, setForm] = useState({
     symbol: "",
@@ -178,12 +179,15 @@ function NewTrade() {
     let finalScreenshotUrl = form.screenshot;
     if (imageFile && user) {
       showToast("Uploading screenshot... ⏳", "success");
-      const url = await uploadImage(user.uid, imageFile);
+      const url = await uploadImage(user.uid, imageFile, (progress) => {
+        setUploadProgress(Math.round(progress));
+      });
       if (url) {
         finalScreenshotUrl = url;
       } else {
         showToast("Failed to upload screenshot", "error");
         setIsUploading(false);
+        setUploadProgress(0);
         return;
       }
     }
@@ -240,6 +244,7 @@ function NewTrade() {
         );
         setTimeout(() => {
           setIsUploading(false);
+          setUploadProgress(0);
           router.push("/trades");
         }, 1000);
       } else {
@@ -249,6 +254,7 @@ function NewTrade() {
       console.error("Submit error:", error);
       showToast("Failed to save trade. Please check your connection.", "error");
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -704,7 +710,7 @@ function NewTrade() {
                 disabled={isUploading}
               >
                 {isUploading
-                  ? (imageFile ? "🚀 Uploading Image..." : "Processing...")
+                  ? (imageFile ? `🚀 Uploading ${uploadProgress}%` : "Processing...")
                   : isEditing
                     ? "✅ Update Trade"
                     : "🔥 Save Trade"}
