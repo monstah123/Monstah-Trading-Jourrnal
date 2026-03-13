@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import "@/styles/landing.css";
+import { useSound } from "@/components/SoundProvider";
 
 export default function Home() {
+  const { playHover, playClick, playMoney } = useSound();
+
   return (
     <div className="landing-page">
       <section className="hero-section">
@@ -18,10 +23,20 @@ export default function Home() {
             analyze your psychology, and sharpen your edge.
           </p>
           <div className="hero-btns">
-            <Link href="/login" className="btn btn-primary btn-lg">
+            <Link 
+              href="/login" 
+              className="btn btn-primary btn-lg"
+              onMouseEnter={playHover}
+              onClick={playMoney}
+            >
               Start Journaling For Free
             </Link>
-            <Link href="/dashboard" className="btn btn-secondary btn-lg">
+            <Link 
+              href="/dashboard" 
+              className="btn btn-secondary btn-lg"
+              onMouseEnter={playHover}
+              onClick={playClick}
+            >
               View Demo Dashboard
             </Link>
           </div>
@@ -35,54 +50,54 @@ export default function Home() {
         </div>
 
         <div className="features-grid">
-          <div className="feature-card">
+          <div className="feature-card" onMouseEnter={playHover}>
             <span className="feature-icon">🤖</span>
-            <h3 className="feature-title">AI Trading Coach</h3>
+            <h3 className="feature-title" onMouseEnter={playMoney} style={{ cursor: 'pointer' }}>AI Trading Coach</h3>
             <p className="feature-description">
               Personalized AI analysis powered by GPT-4o. Get daily reviews and identify 
               costly psychological patterns before they drain your account.
             </p>
           </div>
 
-          <div className="feature-card">
+          <div className="feature-card" onMouseEnter={playHover}>
             <span className="feature-icon">📈</span>
-            <h3 className="feature-title">Advanced Analytics</h3>
+            <h3 className="feature-title" onMouseEnter={playMoney} style={{ cursor: 'pointer' }}>Advanced Analytics</h3>
             <p className="feature-description">
               Deep dive into your stats with equity curves, setup performance, 
               and win-rate breakdowns across different brokers and assets.
             </p>
           </div>
 
-          <div className="feature-card">
+          <div className="feature-card" onMouseEnter={playHover}>
             <span className="feature-icon">🧠</span>
-            <h3 className="feature-title">Psychology Toolkit</h3>
+            <h3 className="feature-title" onMouseEnter={playMoney} style={{ cursor: 'pointer' }}>Psychology Toolkit</h3>
             <p className="feature-description">
               Track your emotions before and after every trade. Understand how FOMO, 
               fear, and greed are impacting your P&L.
             </p>
           </div>
 
-          <div className="feature-card">
+          <div className="feature-card" onMouseEnter={playHover}>
             <span className="feature-icon">🖼️</span>
-            <h3 className="feature-title">Visual Playbook</h3>
+            <h3 className="feature-title" onMouseEnter={playMoney} style={{ cursor: 'pointer' }}>Visual Playbook</h3>
             <p className="feature-description">
               Capture screenshots and build a visual library of your A+ setups. 
               Review your best wins and sharpen your pattern recognition.
             </p>
           </div>
 
-          <div className="feature-card">
+          <div className="feature-card" onMouseEnter={playHover}>
             <span className="feature-icon">🔗</span>
-            <h3 className="feature-title">Shareable P&L Cards</h3>
+            <h3 className="feature-title" onMouseEnter={playMoney} style={{ cursor: 'pointer' }}>Shareable P&L Cards</h3>
             <p className="feature-description">
               Generate beautiful, secure share links for your best trades. 
               Show off your wins on social media while keeping your personal data private.
             </p>
           </div>
 
-          <div className="feature-card">
+          <div className="feature-card" onMouseEnter={playHover}>
             <span className="feature-icon">📝</span>
-            <h3 className="feature-title">Real-Time Journal</h3>
+            <h3 className="feature-title" onMouseEnter={playMoney} style={{ cursor: 'pointer' }}>Real-Time Journal</h3>
             <p className="feature-description">
               End-of-day reflection tools that help you build the discipline of 
               a professional hedge fund manager.
