@@ -29,6 +29,15 @@ export default function JournalPage() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [aiReview, setAiReview] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const [form, setForm] = useState({
     date: "",
@@ -65,36 +74,42 @@ export default function JournalPage() {
 
   const handleSave = async () => {
     if (!user) return;
-    const dayTrades = trades.filter((t) => t.date.startsWith(form.date));
-    const entry: JournalEntry = {
-      id: generateId(),
-      date: form.date,
-      preMarketNotes: form.preMarketNotes,
-      postMarketNotes: form.postMarketNotes,
-      mood: form.mood,
-      lessonsLearned: form.lessonsLearned,
-      goalsForTomorrow: form.goalsForTomorrow,
-      marketConditions: form.marketConditions,
-      overallRating: form.overallRating,
-      trades: dayTrades.map((t) => t.id),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const dayTrades = trades.filter((t) => t.date.startsWith(form.date));
+      const entry: JournalEntry = {
+        id: generateId(),
+        date: form.date,
+        preMarketNotes: form.preMarketNotes,
+        postMarketNotes: form.postMarketNotes,
+        mood: form.mood,
+        lessonsLearned: form.lessonsLearned,
+        goalsForTomorrow: form.goalsForTomorrow,
+        marketConditions: form.marketConditions,
+        overallRating: form.overallRating,
+        trades: dayTrades.map((t) => t.id),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    await saveJournalEntry(user.uid, entry);
-    const updatedEntries = await getJournalEntries(user.uid);
-    setEntries(updatedEntries.sort((a, b) => b.date.localeCompare(a.date)));
-    setShowForm(false);
-    setForm({
-      date: new Date().toISOString().split("T")[0],
-      preMarketNotes: "",
-      postMarketNotes: "",
-      mood: "neutral",
-      lessonsLearned: "",
-      goalsForTomorrow: "",
-      marketConditions: "",
-      overallRating: 5,
-    });
+      await saveJournalEntry(user.uid, entry);
+      const updatedEntries = await getJournalEntries(user.uid);
+      setEntries(updatedEntries.sort((a, b) => b.date.localeCompare(a.date)));
+      setShowForm(false);
+      setForm({
+        date: new Date().toISOString().split("T")[0],
+        preMarketNotes: "",
+        postMarketNotes: "",
+        mood: "neutral",
+        lessonsLearned: "",
+        goalsForTomorrow: "",
+        marketConditions: "",
+        overallRating: 5,
+      });
+      showToast("Journal entry saved! 📝", "success");
+    } catch (error) {
+      console.error("Save error:", error);
+      showToast("Failed to save journal entry. Check your database rules!", "error");
+    }
   };
 
   const generateDailyReview = async (date: string) => {
@@ -502,6 +517,11 @@ export default function JournalPage() {
             </div>
           )}
         </div>
+        {toast && (
+          <div className={`toast ${toast.type}`}>
+            {toast.type === "success" ? "✅" : "❌"} {toast.message}
+          </div>
+        )}
       </main>
     </div>
   );
