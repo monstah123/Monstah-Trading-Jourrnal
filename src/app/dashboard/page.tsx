@@ -9,6 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
+import "../styles/landing.css";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -207,6 +208,10 @@ export default function Dashboard() {
       <Sidebar />
       <main className="main-content">
         <div className="page-header">
+          <Link href="/" className="pricing-bubble">
+             <span>💎</span>
+             <span>Pro Plans</span>
+          </Link>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
             <div>
               <h2>Dashboard</h2>

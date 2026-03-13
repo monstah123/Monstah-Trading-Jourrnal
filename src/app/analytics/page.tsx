@@ -6,6 +6,8 @@ import { getTrades } from "@/lib/storage";
 import { calculatePortfolioStats, calculateDailyStats } from "@/lib/stats";
 import { Trade } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
+import Link from "next/link";
+import "../styles/landing.css";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -184,6 +186,10 @@ export default function AnalyticsPage() {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
+        <Link href="/" className="pricing-bubble">
+           <span>💎</span>
+           <span>Pro Plans</span>
+        </Link>
         <div className="page-header">
           <h2>Analytics</h2>
           <p>Deep dive into your trading performance</p>

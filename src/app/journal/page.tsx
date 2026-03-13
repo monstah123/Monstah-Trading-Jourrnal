@@ -10,6 +10,8 @@ import {
 } from "@/lib/storage";
 import { JournalEntry, Emotion, Trade } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
+import Link from "next/link";
+import "../styles/landing.css";
 
 const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
   { value: "confident", emoji: "😎", label: "Confident" },
@@ -146,6 +148,10 @@ export default function JournalPage() {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
+        <Link href="/" className="pricing-bubble">
+           <span>💎</span>
+           <span>Pro Plans</span>
+        </Link>
         <div className="page-header flex justify-between items-center">
           <div>
             <h2>Trading Journal</h2>

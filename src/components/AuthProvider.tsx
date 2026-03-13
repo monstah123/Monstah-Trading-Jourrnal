@@ -39,10 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Redirect logic — separated so it doesn't re-create the auth listener
   useEffect(() => {
     if (loading) return; // Wait until auth is resolved
-    const isAuthPage = pathname.startsWith("/login");
+    
+    const isAuthPage = pathname === "/login";
+    const isLandingPage = pathname === "/";
+    const isPublicApi = pathname.startsWith("/api/share"); // Assuming share is public
+
     if (user && isAuthPage) {
       router.push("/dashboard");
-    } else if (!user && !isAuthPage && !pathname.startsWith("/api")) {
+    } else if (!user && !isAuthPage && !isLandingPage && !isPublicApi) {
       router.push("/login");
     }
   }, [user, loading, pathname, router]);
