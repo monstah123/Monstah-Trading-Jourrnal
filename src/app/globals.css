@@ -944,6 +944,10 @@ body {
     padding: 16px;
   }
 
+  .page-header {
+    padding: 16px 16px 16px 64px !important;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -1165,7 +1169,7 @@ body {
 
 @media (max-width: 480px) {
   .page-header {
-    padding: 16px 16px 0;
+    padding: 16px 16px 16px 64px !important;
   }
 
   .page-header h2 {
@@ -1219,6 +1223,6 @@ body {
 
   /* Main content needs top padding for mobile menu button */
   .main-content {
-    padding-top: 60px;
+    padding-top: 80px;
   }
 }
