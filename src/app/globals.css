@@ -948,6 +948,10 @@ body {
     padding: 16px 16px 16px 64px !important;
   }
 
+  .sidebar-logo {
+    padding-left: 64px;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
