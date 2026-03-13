@@ -32,51 +32,29 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         return audioCtxRef.current;
     }, []);
 
-    // "Cha-CHING" — low thud + high sparkle ring clearly separated
+    // Updated playClick to be a premium "Money Sparkle" sound for all app navigation
     const playClick = useCallback(() => {
         getCtx().then((ctx) => {
             try {
                 const now = ctx.currentTime;
 
-                // First hit — punchy low thud ("CHA")
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-                osc1.connect(gain1);
-                gain1.connect(ctx.destination);
-                osc1.type = "triangle";
-                osc1.frequency.setValueAtTime(440, now);
-                osc1.frequency.exponentialRampToValueAtTime(220, now + 0.09);
-                gain1.gain.setValueAtTime(0.4, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
-                osc1.start(now);
-                osc1.stop(now + 0.15);
-
-                // Second hit — sparkle high ring ("CHING") 150ms later
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.type = "sine";
-                osc2.frequency.setValueAtTime(1760, now + 0.15);
-                osc2.frequency.exponentialRampToValueAtTime(1320, now + 0.5);
-                gain2.gain.setValueAtTime(0, now + 0.15);
-                gain2.gain.linearRampToValueAtTime(0.32, now + 0.16);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                osc2.start(now + 0.15);
-                osc2.stop(now + 0.65);
-
-                // Shimmer overtone on top of ring
-                const osc3 = ctx.createOscillator();
-                const gain3 = ctx.createGain();
-                osc3.connect(gain3);
-                gain3.connect(ctx.destination);
-                osc3.type = "sine";
-                osc3.frequency.setValueAtTime(3520, now + 0.15);
-                gain3.gain.setValueAtTime(0, now + 0.15);
-                gain3.gain.linearRampToValueAtTime(0.12, now + 0.16);
-                gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                osc3.start(now + 0.15);
-                osc3.stop(now + 0.4);
+                // High-frequency "Money" sparkle hit — satisfying and expensive sounding
+                const freqs = [1046.50, 1318.51, 1567.98, 2093.00]; // C6, E6, G6, C7
+                freqs.forEach((f, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(f, now + i * 0.03);
+                    
+                    gain.gain.setValueAtTime(0, now + i * 0.03);
+                    gain.gain.linearRampToValueAtTime(0.08, now + i * 0.03 + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.03 + 0.2);
+                    
+                    osc.start(now + i * 0.03);
+                    osc.stop(now + i * 0.03 + 0.3);
+                });
             } catch (_) { }
         }).catch(() => { });
     }, [getCtx]);
