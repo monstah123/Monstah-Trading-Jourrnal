@@ -398,8 +398,10 @@ export default function Dashboard() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
-                          labelStyle={{ color: "#8888a0" }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
+                          labelStyle={{ color: "#8888a0", marginBottom: "4px" }}
                           formatter={(value) => [
                             `$${Number(value).toFixed(2)}`,
                             "Equity",
@@ -445,7 +447,9 @@ export default function Dashboard() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -478,7 +482,9 @@ export default function Dashboard() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                           formatter={(value) => [
                             `$${Number(value).toFixed(2)}`,
                             "P&L",

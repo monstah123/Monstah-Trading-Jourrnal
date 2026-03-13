@@ -334,7 +334,9 @@ export default function AnalyticsPage() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                         />
                         <Area
                           type="monotone"
@@ -376,7 +378,9 @@ export default function AnalyticsPage() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                         />
                         <Bar dataKey="winRate" radius={[0, 4, 4, 0]}>
                           {setupBarData.map((entry, i) => (
@@ -417,7 +421,9 @@ export default function AnalyticsPage() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                         />
                         <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                           {dowChartData.map((entry, i) => (
@@ -456,7 +462,9 @@ export default function AnalyticsPage() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                         />
                         <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
                           {hourlyChartData.map((entry, i) => (
@@ -536,7 +544,9 @@ export default function AnalyticsPage() {
                             background: "#13131d",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
+                            boxShadow: "var(--shadow-lg)",
                           }}
+                          itemStyle={{ color: "#00e676", fontWeight: 700 }}
                         />
                         <Scatter data={scatterData} fill="#6c5ce7">
                           {scatterData.map((entry, i) => (
