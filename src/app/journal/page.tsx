@@ -335,7 +335,7 @@ export default function JournalPage() {
                     }}
                     onClick={() => setSelectedEntry(isSelected ? null : entry)}
                   >
-                    <div className="flex justify-between items-center mb-16">
+                    <div className="flex justify-between items-center mb-16 gap-16" style={{ flexWrap: 'wrap' }}>
                       <div className="flex items-center gap-16">
                         <div>
                           <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>

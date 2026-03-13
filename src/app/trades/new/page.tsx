@@ -564,7 +564,7 @@ function NewTrade() {
                 <span className="card-title">🧠 Psychology</span>
               </div>
               <div
-                className="form-row"
+                className="form-row grid-mobile-1"
                 style={{ gridTemplateColumns: "1fr 1fr" }}
               >
                 <div className="form-group">
