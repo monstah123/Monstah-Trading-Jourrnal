@@ -93,6 +93,7 @@ export async function saveJournalEntry(
     });
   } catch (error) {
     console.error("Error saving journal entry:", error);
+    throw error;
   }
 }
 
@@ -105,6 +106,7 @@ export async function deleteJournalEntry(
     await deleteDoc(doc(db, "journals", id));
   } catch (error) {
     console.error("Error deleting journal entry:", error);
+    throw error;
   }
 }
 
@@ -135,6 +137,7 @@ export async function savePlaybook(
     });
   } catch (error) {
     console.error("Error saving playbook:", error);
+    throw error;
   }
 }
 
