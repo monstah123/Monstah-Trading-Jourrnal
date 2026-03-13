@@ -9,7 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import "../styles/landing.css";
+import "@/styles/landing.css";
 import {
   ResponsiveContainer,
   AreaChart,

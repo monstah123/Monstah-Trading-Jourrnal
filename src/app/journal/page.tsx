@@ -11,7 +11,7 @@ import {
 import { JournalEntry, Emotion, Trade } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
-import "../styles/landing.css";
+import "@/styles/landing.css";
 
 const EMOTIONS: { value: Emotion; emoji: string; label: string }[] = [
   { value: "confident", emoji: "😎", label: "Confident" },

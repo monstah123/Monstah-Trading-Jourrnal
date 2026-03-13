@@ -7,7 +7,7 @@ import { calculatePortfolioStats, calculateDailyStats } from "@/lib/stats";
 import { Trade } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
-import "../styles/landing.css";
+import "@/styles/landing.css";
 import {
   ResponsiveContainer,
   AreaChart,
