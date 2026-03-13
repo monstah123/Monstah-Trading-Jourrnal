@@ -142,7 +142,7 @@
 
 .pricing-bubble {
   position: fixed;
-  top: 24px;
+  top: 140px;
   right: 24px;
   z-index: 1000;
   background: var(--bg-glass);
@@ -182,7 +182,7 @@
   
   .pricing-bubble {
     top: auto;
-    bottom: 24px;
-    right: 24px;
+    bottom: 100px;
+    right: 20px;
   }
 }
