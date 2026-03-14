@@ -22,14 +22,23 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     const audioCtxRef = useRef<AudioContext | null>(null);
 
     const getCtx = useCallback(async () => {
-        if (!audioCtxRef.current) {
+        try {
+            if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+                audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            
+            // Browsers suspend AudioContext after navigation/inactivity
+            if (audioCtxRef.current.state === "suspended") {
+                await audioCtxRef.current.resume();
+            }
+            
+            return audioCtxRef.current;
+        } catch (err) {
+            console.error("AudioContext initialization failed:", err);
+            // If it fails, try once more with a fresh context
             audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            return audioCtxRef.current;
         }
-        // Always resume — browsers suspend AudioContext after navigation/inactivity
-        if (audioCtxRef.current.state === "suspended") {
-            await audioCtxRef.current.resume();
-        }
-        return audioCtxRef.current;
     }, []);
 
     // Updated playClick to be a premium "Money Sparkle" sound for all app navigation
