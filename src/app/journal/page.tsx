@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import {
   getJournalEntries,
   saveJournalEntry,
+  deleteJournalEntry,
   getTrades,
   generateId,
 } from "@/lib/storage";
@@ -142,6 +143,26 @@ export default function JournalPage() {
 
   const getDateTradeCount = (date: string) => {
     return trades.filter((t) => t.date.startsWith(date)).length;
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this journal entry? This cannot be undone.",
+      )
+    )
+      return;
+
+    try {
+      await deleteJournalEntry(user.uid, id);
+      setEntries(entries.filter((e) => e.id !== id));
+      setSelectedEntry(null);
+      showToast("Journal entry deleted! 🗑️", "success");
+    } catch (error) {
+      console.error("Delete error:", error);
+      showToast("Failed to delete journal entry.", "error");
+    }
   };
 
   return (
@@ -476,15 +497,27 @@ export default function JournalPage() {
                           </div>
                         )}
 
-                        <button
-                          className="btn btn-secondary btn-sm mt-16"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            generateDailyReview(entry.date);
-                          }}
-                        >
-                          🤖 Generate AI Review
-                        </button>
+                        <div className="flex justify-between items-center mt-16">
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateDailyReview(entry.date);
+                            }}
+                          >
+                            🤖 Generate AI Review
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm text-loss"
+                            style={{ color: "var(--loss)" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(entry.id);
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
 
                         {loadingAi && (
                           <div
