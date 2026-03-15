@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
-import { getPlaybooks, savePlaybook, getTrades, generateId } from "@/lib/storage";
+import { getPlaybooks, savePlaybook, deletePlaybook, getTrades, generateId } from "@/lib/storage";
 import { Playbook, TradeSetup, AssetClass } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -27,6 +27,7 @@ export default function PlaybookPage() {
     const [mounted, setMounted] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [selected, setSelected] = useState<Playbook | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [newRule, setNewRule] = useState("");
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -97,18 +98,60 @@ export default function PlaybookPage() {
         if (!user || !form.name.trim()) return showToast("Strategy name is required!", "error");
         if (form.rules.length === 0) return showToast("Add at least one rule!", "error");
         const pb: Playbook = {
-            id: generateId(),
+            id: editingId || generateId(),
             ...form,
-            winRate: null,
-            totalTrades: 0,
-            createdAt: new Date().toISOString(),
+            winRate: editingId ? playbooks.find(p => p.id === editingId)?.winRate || null : null,
+            totalTrades: editingId ? playbooks.find(p => p.id === editingId)?.totalTrades || 0 : 0,
+            createdAt: editingId ? playbooks.find(p => p.id === editingId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
         await savePlaybook(user.uid, pb);
-        setPlaybooks((prev) => [pb, ...prev]);
+        
+        if (editingId) {
+            setPlaybooks((prev) => prev.map(p => p.id === editingId ? pb : p));
+        } else {
+            setPlaybooks((prev) => [pb, ...prev]);
+        }
+        
         setShowForm(false);
+        setEditingId(null);
         resetForm();
-        showToast("🎯 Strategy saved!", "success");
+        showToast(editingId ? "🎯 Strategy updated!" : "🎯 Strategy saved!", "success");
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!user) return;
+        if (!window.confirm("Are you sure you want to delete this strategy? This cannot be undone.")) return;
+        
+        try {
+            await deletePlaybook(user.uid, id);
+            setPlaybooks((prev) => prev.filter(p => p.id !== id));
+            if (selected?.id === id) setSelected(null);
+            if (editingId === id) {
+                setEditingId(null);
+                setShowForm(false);
+                resetForm();
+            }
+            showToast("Strategy deleted! 🗑️", "success");
+        } catch (error) {
+            console.error("Delete error:", error);
+            showToast("Failed to delete strategy.", "error");
+        }
+    };
+
+    const handleEdit = (e: React.MouseEvent, pb: Playbook) => {
+        e.stopPropagation();
+        setForm({
+            name: pb.name,
+            description: pb.description,
+            rules: pb.rules,
+            setup: pb.setup,
+            timeframe: pb.timeframe,
+            assetClasses: pb.assetClasses,
+        });
+        setEditingId(pb.id);
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     return (
@@ -121,8 +164,13 @@ export default function PlaybookPage() {
                             <h2>Playbook</h2>
                             <p>Your trading strategy rulebook — document, refine, dominate</p>
                         </div>
-                        <button className="btn btn-primary" onClick={() => { setShowForm(true); setSelected(null); }}>
-                            ➕ New Strategy
+                        <button className="btn btn-primary" onClick={() => { 
+                            setShowForm(!showForm); 
+                            setSelected(null); 
+                            setEditingId(null);
+                            if (!showForm) resetForm();
+                        }}>
+                            {showForm ? "✕ Close" : "➕ New Strategy"}
                         </button>
                     </div>
                 </div>
@@ -132,7 +180,7 @@ export default function PlaybookPage() {
                     {showForm && (
                         <div className="card" style={{ marginBottom: 24, border: "1px solid var(--accent-primary)", boxShadow: "0 0 20px rgba(108,92,231,0.15)" }}>
                             <h3 style={{ marginBottom: 20, fontSize: "1.1rem", color: "var(--accent-primary)" }}>
-                                🎯 New Strategy
+                                {editingId ? "✏️ Edit Strategy" : "🎯 New Strategy"}
                             </h3>
                             <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                                 <div className="form-group">
@@ -218,8 +266,10 @@ export default function PlaybookPage() {
                             </div>
 
                             <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                                <button className="btn btn-primary" onClick={handleSave}>💾 Save Strategy</button>
-                                <button className="btn btn-ghost" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
+                                <button className="btn btn-primary" onClick={handleSave}>
+                                    {editingId ? "💾 Update Strategy" : "💾 Save Strategy"}
+                                </button>
+                                <button className="btn btn-ghost" onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }}>Cancel</button>
                             </div>
                         </div>
                     )}
@@ -280,6 +330,26 @@ export default function PlaybookPage() {
                                                     <li key={i} style={{ fontSize: "0.88rem", color: "var(--text-primary)", lineHeight: 1.5 }}>{rule}</li>
                                                 ))}
                                             </ol>
+
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, paddingTop: 12, borderTop: "1px solid var(--border-secondary)" }}>
+                                                <button 
+                                                    className="btn btn-primary btn-sm"
+                                                    style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+                                                    onClick={(e) => handleEdit(e, pb)}
+                                                >
+                                                    ✏️ Edit Strategy
+                                                </button>
+                                                <button 
+                                                    className="btn btn-ghost btn-sm"
+                                                    style={{ color: "var(--loss)", padding: "6px 14px", fontSize: "0.8rem" }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(pb.id);
+                                                    }}
+                                                >
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

@@ -140,6 +140,18 @@ export async function savePlaybook(
     throw error;
   }
 }
+export async function deletePlaybook(
+  userId: string,
+  id: string,
+): Promise<void> {
+  if (!userId) return;
+  try {
+    await deleteDoc(doc(db, "playbooks", id));
+  } catch (error) {
+    console.error("Error deleting playbook:", error);
+    throw error;
+  }
+}
 
 // Generate unique ID
 export function generateId(): string {
