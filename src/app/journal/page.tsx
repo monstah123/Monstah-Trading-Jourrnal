@@ -30,6 +30,7 @@ export default function JournalPage() {
   const [mounted, setMounted] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [aiReview, setAiReview] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState<{
@@ -80,7 +81,7 @@ export default function JournalPage() {
     try {
       const dayTrades = trades.filter((t) => t.date.startsWith(form.date));
       const entry: JournalEntry = {
-        id: generateId(),
+        id: editingId || generateId(),
         date: form.date,
         preMarketNotes: form.preMarketNotes,
         postMarketNotes: form.postMarketNotes,
@@ -90,7 +91,10 @@ export default function JournalPage() {
         marketConditions: form.marketConditions,
         overallRating: form.overallRating,
         trades: dayTrades.map((t) => t.id),
-        createdAt: new Date().toISOString(),
+        createdAt: editingId
+          ? entries.find((e) => e.id === editingId)?.createdAt ||
+            new Date().toISOString()
+          : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -98,6 +102,7 @@ export default function JournalPage() {
       const updatedEntries = await getJournalEntries(user.uid);
       setEntries(updatedEntries.sort((a, b) => b.date.localeCompare(a.date)));
       setShowForm(false);
+      setEditingId(null);
       setForm({
         date: new Date().toISOString().split("T")[0],
         preMarketNotes: "",
@@ -108,10 +113,16 @@ export default function JournalPage() {
         marketConditions: "",
         overallRating: 5,
       });
-      showToast("Journal entry saved! 📝", "success");
+      showToast(
+        editingId ? "Journal entry updated! ✨" : "Journal entry saved! 📝",
+        "success",
+      );
     } catch (error) {
       console.error("Save error:", error);
-      showToast("Failed to save journal entry. Check your database rules!", "error");
+      showToast(
+        "Failed to save journal entry. Check your database rules!",
+        "error",
+      );
     }
   };
 
@@ -157,12 +168,33 @@ export default function JournalPage() {
     try {
       await deleteJournalEntry(user.uid, id);
       setEntries(entries.filter((e) => e.id !== id));
-      setSelectedEntry(null);
+      if (selectedEntry?.id === id) setSelectedEntry(null);
+      if (editingId === id) {
+        setEditingId(null);
+        setShowForm(false);
+      }
       showToast("Journal entry deleted! 🗑️", "success");
     } catch (error) {
       console.error("Delete error:", error);
       showToast("Failed to delete journal entry.", "error");
     }
+  };
+
+  const handleEdit = (e: React.MouseEvent, entry: JournalEntry) => {
+    e.stopPropagation();
+    setForm({
+      date: entry.date,
+      preMarketNotes: entry.preMarketNotes || "",
+      postMarketNotes: entry.postMarketNotes || "",
+      mood: entry.mood,
+      lessonsLearned: entry.lessonsLearned || "",
+      goalsForTomorrow: entry.goalsForTomorrow || "",
+      marketConditions: entry.marketConditions || "",
+      overallRating: entry.overallRating,
+    });
+    setEditingId(entry.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -180,7 +212,22 @@ export default function JournalPage() {
           </div>
           <button
             className="btn btn-primary"
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                setEditingId(null);
+                setForm({
+                  date: new Date().toISOString().split("T")[0],
+                  preMarketNotes: "",
+                  postMarketNotes: "",
+                  mood: "neutral",
+                  lessonsLearned: "",
+                  goalsForTomorrow: "",
+                  marketConditions: "",
+                  overallRating: 5,
+                });
+              }
+              setShowForm(!showForm);
+            }}
           >
             {showForm ? "✕ Close" : "📝 New Entry"}
           </button>
@@ -194,7 +241,9 @@ export default function JournalPage() {
               style={{ border: "1px solid var(--border-accent)" }}
             >
               <div className="card-header">
-                <span className="card-title">📝 New Journal Entry</span>
+                <span className="card-title">
+                  {editingId ? "✏️ Edit Journal Entry" : "📝 New Journal Entry"}
+                </span>
               </div>
 
               <div className="form-row mb-16">
@@ -306,7 +355,20 @@ export default function JournalPage() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingId(null);
+                    setForm({
+                      date: new Date().toISOString().split("T")[0],
+                      preMarketNotes: "",
+                      postMarketNotes: "",
+                      mood: "neutral",
+                      lessonsLearned: "",
+                      goalsForTomorrow: "",
+                      marketConditions: "",
+                      overallRating: 5,
+                    });
+                  }}
                 >
                   Cancel
                 </button>
@@ -498,15 +560,23 @@ export default function JournalPage() {
                         )}
 
                         <div className="flex justify-between items-center mt-16">
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              generateDailyReview(entry.date);
-                            }}
-                          >
-                            🤖 Generate AI Review
-                          </button>
+                          <div className="flex items-center gap-12">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                generateDailyReview(entry.date);
+                              }}
+                            >
+                              🤖 Generate AI Review
+                            </button>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={(e) => handleEdit(e, entry)}
+                            >
+                              ✏️ Edit
+                            </button>
+                          </div>
                           <button
                             className="btn btn-ghost btn-sm text-loss"
                             style={{ color: "var(--loss)" }}
