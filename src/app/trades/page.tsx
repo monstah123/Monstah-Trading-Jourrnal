@@ -42,7 +42,7 @@ export default function TradesPage() {
           // Process in batches if there are many to avoid locking the UI totally
           for (const row of results.data as any[]) {
             const dateStr =
-              row.Date || row.date || row.Time || new Date().toISOString().split("T")[0];
+              row.Date || row.date || row.Time || row["Date Time"] || new Date().toISOString().split("T")[0];
             const pnlVal = parseFloat(row.PnL || row.Profit || row.pnl || "0");
             
             // Try formatting date string
@@ -53,19 +53,28 @@ export default function TradesPage() {
                // Ignore if Date is unparseable
             }
 
+            const rowKeys = Object.keys(row);
+            const getFuzzyKey = (...matches: string[]) => {
+              for (const m of matches) {
+                const found = rowKeys.find(k => k.toLowerCase().includes(m.toLowerCase()));
+                if (found && row[found] !== '') return row[found];
+              }
+              return undefined;
+            };
+
             const trade: Trade = {
               id: generateId(),
               date: isoDate,
               symbol: (row.Symbol || row.symbol || row.Item || "UNKNOWN").toUpperCase(),
               assetClass: ((row.AssetClass || row.asset || "").toLowerCase() ||
                 "forex") as AssetClass,
-              direction: ((row.Direction || row.Type || "").toLowerCase().includes("sell")
+              direction: ((row.Direction || row.Type || getFuzzyKey("transaction", "type") || "").toLowerCase().includes("sell")
                 ? "short"
                 : "long") as import("@/types/trade").TradeDirection,
               status: "closed",
-              entryPrice: parseFloat(row.EntryPrice || row.Price || row.entry || "0"),
-              exitPrice: parseFloat(row.ExitPrice || row.Close || row.exit || "0"),
-              quantity: parseFloat(row.Quantity || row.Size || row.Volume || "1"),
+              entryPrice: parseFloat(row.EntryPrice || row.Price || row.entry || getFuzzyKey("open price", "open") || "0"),
+              exitPrice: parseFloat(row.ExitPrice || row.Close || row.exit || getFuzzyKey("close price") || "0"),
+              quantity: parseFloat(String(getFuzzyKey("quantity", "size", "volume", "lots") || "1").replace(/,/g, '')),
               quantityType: "units",
               stopLoss: parseFloat(row.SL || row.StopLoss || "0") || null,
               takeProfit: parseFloat(row.TP || row.TakeProfit || "0") || null,
