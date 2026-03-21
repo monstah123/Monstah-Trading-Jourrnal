@@ -91,7 +91,7 @@ export default function TradesPage() {
               entryTime: "00:00",
               exitTime: null,
               strategy: "CSV Strategy",
-              riskReward: null,
+              riskReward: parseFloat(String(getFuzzyKey("r:r", "rr", "risk reward") || "0").replace(/R/ig, '')) || null,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
