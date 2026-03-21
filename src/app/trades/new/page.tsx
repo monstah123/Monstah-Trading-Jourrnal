@@ -19,6 +19,12 @@ import {
   QuantityType,
 } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
+import dynamic from "next/dynamic";
+
+const AdvancedRealTimeChart = dynamic(
+  () => import("react-ts-tradingview-widgets").then((mod) => mod.AdvancedRealTimeChart),
+  { ssr: false }
+);
 
 const SETUPS: TradeSetup[] = [
   "breakout",
@@ -627,6 +633,29 @@ function NewTrade() {
                 </div>
               </div>
             </div>
+
+            {form.symbol && (
+              <div className="card mb-24">
+                <div className="card-header">
+                  <span className="card-title">📈 Trade Chart (Replay)</span>
+                </div>
+                <div style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden" }}>
+                  <AdvancedRealTimeChart
+                    theme="dark"
+                    symbol={form.symbol}
+                    interval="15"
+                    timezone="Etc/UTC"
+                    style="1"
+                    locale="en"
+                    enable_publishing={false}
+                    hide_side_toolbar={false}
+                    allow_symbol_change={true}
+                    container_id="tv_replay_chart"
+                    autosize
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="card mb-24">
               <div className="card-header">

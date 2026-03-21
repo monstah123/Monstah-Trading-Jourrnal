@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
-import { getTrades, deleteTrade } from "@/lib/storage";
+import { getTrades, deleteTrade, saveTrade, generateId } from "@/lib/storage";
 import { Trade, AssetClass, TradeSetup } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
+import Papa from "papaparse";
 
 export default function TradesPage() {
   const { user } = useAuth();
@@ -23,6 +24,88 @@ export default function TradesPage() {
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setImporting(true);
+    setToast({ message: "Importing...", type: "success" });
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        let importedCount = 0;
+        try {
+          // Process in batches if there are many to avoid locking the UI totally
+          for (const row of results.data as any[]) {
+            const dateStr =
+              row.Date || row.date || row.Time || new Date().toISOString().split("T")[0];
+            const pnlVal = parseFloat(row.PnL || row.Profit || row.pnl || "0");
+            
+            // Try formatting date string
+            let isoDate = new Date().toISOString();
+            try {
+              isoDate = new Date(dateStr).toISOString();
+            } catch (e) {
+               // Ignore if Date is unparseable
+            }
+
+            const trade: Trade = {
+              id: generateId(),
+              date: isoDate,
+              symbol: (row.Symbol || row.symbol || row.Item || "UNKNOWN").toUpperCase(),
+              assetClass: ((row.AssetClass || row.asset || "").toLowerCase() ||
+                "forex") as AssetClass,
+              direction: ((row.Direction || row.Type || "").toLowerCase().includes("sell")
+                ? "short"
+                : "long") as import("@/types/trade").TradeDirection,
+              status: "closed",
+              entryPrice: parseFloat(row.EntryPrice || row.Price || row.entry || "0"),
+              exitPrice: parseFloat(row.ExitPrice || row.Close || row.exit || "0"),
+              quantity: parseFloat(row.Quantity || row.Size || row.Volume || "1"),
+              quantityType: "units",
+              stopLoss: parseFloat(row.SL || row.StopLoss || "0") || null,
+              takeProfit: parseFloat(row.TP || row.TakeProfit || "0") || null,
+              fees: parseFloat(row.Commission || row.Fees || row.Swap || "0"),
+              pnl: pnlVal,
+              pnlPercent: null,
+              setup: "custom",
+              tags: ["Csv Import"],
+              emotionBefore: "neutral",
+              emotionAfter: null,
+              confidence: 5,
+              notes: row.Notes || "Auto-imported from CSV",
+              screenshot: null,
+              entryTime: "00:00",
+              exitTime: null,
+              strategy: "CSV Strategy",
+              riskReward: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            await saveTrade(user.uid, trade);
+            importedCount++;
+          }
+          const updatedTrades = await getTrades(user.uid);
+          setTrades(updatedTrades);
+          setToast({
+            message: `Successfully imported ${importedCount} trades!`,
+            type: "success",
+          });
+        } catch (err) {
+          console.error("Row import failed", err);
+          setToast({ message: "Error parsing CSV file.", type: "error" });
+        } finally {
+          setImporting(false);
+          e.target.value = ""; // reset
+          setTimeout(() => setToast(null), 3000);
+        }
+      },
+    });
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -93,9 +176,21 @@ export default function TradesPage() {
               </span>
             </p>
           </div>
-          <Link href="/trades/new" className="btn btn-primary">
-            ➕ New Trade
-          </Link>
+          <div className="flex items-center gap-12">
+            <label className={`btn btn-secondary ${importing ? "opacity-50" : ""}`} style={{ cursor: "pointer" }}>
+              {importing ? "⏳ Importing..." : "📁 Import CSV"}
+              <input
+                type="file"
+                hidden
+                accept=".csv"
+                onChange={handleFileUpload}
+                disabled={importing}
+              />
+            </label>
+            <Link href="/trades/new" className="btn btn-primary">
+              ➕ New Trade
+            </Link>
+          </div>
         </div>
         <div className="page-body">
           <div className="card mb-24" style={{ padding: "16px 20px" }}>
