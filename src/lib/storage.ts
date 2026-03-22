@@ -153,43 +153,36 @@ export async function deletePlaybook(
   }
 }
 
-// Watchlist
+// Watchlist (Stored in LocalStorage to avoid Firebase permission issues)
+const WATCHLIST_KEY = "monstah_watchlist";
+const DEFAULT_WATCHLIST = [
+  "FX:EURUSD",
+  "FX:GBPUSD",
+  "OANDA:XAUUSD",
+  "BINANCE:BTCUSDT",
+  "BINANCE:ETHUSDT",
+  "AMEX:SPY",
+  "NASDAQ:QQQ",
+  "NASDAQ:TSLA",
+  "NASDAQ:NVDA"
+];
+
 export async function getWatchlist(userId: string): Promise<string[]> {
-  if (!userId) return [];
+  if (typeof window === "undefined") return DEFAULT_WATCHLIST;
   try {
-    const docRef = doc(db, "settings", `${userId}_watchlist`);
-    const snapshot = await getDocs(query(collection(db, "settings"), where("userId", "==", userId), where("type", "==", "watchlist")));
-    if (snapshot.empty) {
-      return [
-        "FX:EURUSD",
-        "FX:GBPUSD",
-        "OANDA:XAUUSD",
-        "BINANCE:BTCUSDT",
-        "BINANCE:ETHUSDT",
-        "AMEX:SPY",
-        "NASDAQ:QQQ",
-        "NASDAQ:TSLA",
-        "NASDAQ:NVDA"
-      ];
-    }
-    const data = snapshot.docs[0].data();
-    return data.symbols || [];
+    const saved = localStorage.getItem(`${WATCHLIST_KEY}_${userId}`);
+    if (!saved) return DEFAULT_WATCHLIST;
+    return JSON.parse(saved);
   } catch (error) {
     console.error("Error fetching watchlist:", error);
-    return [];
+    return DEFAULT_WATCHLIST;
   }
 }
 
 export async function saveWatchlist(userId: string, symbols: string[]): Promise<void> {
-  if (!userId) return;
+  if (typeof window === "undefined" || !userId) return;
   try {
-    const docRef = doc(db, "settings", `${userId}_watchlist`);
-    await setDoc(docRef, {
-      userId,
-      type: "watchlist",
-      symbols,
-      updatedAt: new Date().toISOString(),
-    });
+    localStorage.setItem(`${WATCHLIST_KEY}_${userId}`, JSON.stringify(symbols));
   } catch (error) {
     console.error("Error saving watchlist:", error);
     throw error;
