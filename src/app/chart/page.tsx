@@ -112,6 +112,17 @@ export default function LiveChartPage() {
                 details={true}
                 hotlist={true}
                 calendar={true}
+                watchlist={[
+                  "FX:EURUSD",
+                  "FX:GBPUSD",
+                  "OANDA:XAUUSD",
+                  "BINANCE:BTCUSDT",
+                  "BINANCE:ETHUSDT",
+                  "AMEX:SPY",
+                  "NASDAQ:QQQ",
+                  "NASDAQ:TSLA",
+                  "NASDAQ:NVDA"
+                ]}
                 show_popup_button={true}
                 container_id="tradingview_chart"
                 autosize

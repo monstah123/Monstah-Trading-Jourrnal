@@ -734,6 +734,17 @@ function NewTrade() {
                     details={true}
                     hotlist={true}
                     calendar={true}
+                    watchlist={[
+                      "FX:EURUSD",
+                      "FX:GBPUSD",
+                      "OANDA:XAUUSD",
+                      "BINANCE:BTCUSDT",
+                      "BINANCE:ETHUSDT",
+                      "AMEX:SPY",
+                      "NASDAQ:QQQ",
+                      "NASDAQ:TSLA",
+                      "NASDAQ:NVDA"
+                    ]}
                     show_popup_button={true}
                     container_id="tv_replay_chart"
                     autosize
