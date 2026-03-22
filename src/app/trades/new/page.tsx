@@ -321,8 +321,8 @@ function NewTrade() {
     }
   };
 
-  const addToWatchlist = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const addToWatchlist = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!newSymbol.trim() || !user) return;
     
     setIsUpdatingWatchlist(true);
@@ -763,17 +763,23 @@ function NewTrade() {
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="flex gap-16 items-center">
                     <span className="card-title">📈 Trade Chart (Replay)</span>
-                    <form onSubmit={addToWatchlist} className="flex gap-2 items-center">
+                    <div className="flex gap-2 items-center">
                       <input
                         className="form-input"
                         style={{ width: '100px', padding: '4px 8px', fontSize: '0.7rem', height: '28px', borderRadius: '4px' }}
                         placeholder="Symbol..."
                         value={newSymbol}
                         onChange={(e) => setNewSymbol(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addToWatchlist();
+                          }
+                        }}
                         disabled={isUpdatingWatchlist}
                       />
                       <button 
-                        type="submit" 
+                        type="button" 
                         className="btn btn-primary" 
                         style={{ 
                           width: '28px', 
@@ -785,12 +791,13 @@ function NewTrade() {
                           fontSize: '1.1rem',
                           borderRadius: '4px'
                         }} 
+                        onClick={() => addToWatchlist()}
                         disabled={isUpdatingWatchlist}
                         title="Add to Watchlist"
                       >
                         +
                       </button>
-                    </form>
+                    </div>
                     <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap', maxWidth: '300px' }}>
                        {watchlist.filter(s => ![
                           "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
