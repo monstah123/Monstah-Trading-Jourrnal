@@ -846,6 +846,8 @@ function NewTrade() {
                     calendar={true}
                     watchlist={watchlist}
                     show_popup_button={true}
+                    // @ts-ignore
+                    countdown={true}
                     container_id="tv_replay_chart"
                     autosize
                   />

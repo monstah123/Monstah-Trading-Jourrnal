@@ -219,6 +219,8 @@ export default function LiveChartPage() {
                 calendar={true}
                 watchlist={watchlist}
                 show_popup_button={true}
+                // @ts-ignore
+                countdown={true}
                 container_id="tradingview_chart"
                 autosize
               />
