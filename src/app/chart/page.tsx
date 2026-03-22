@@ -158,10 +158,13 @@ export default function LiveChartPage() {
                 +
               </button>
             </form>
-            <div className="flex gap-4 items-center">
-               {watchlist.slice(-2).map(s => (
-                 <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                   {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'white', cursor: 'pointer', marginLeft: '4px' }}>×</button>
+            <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap', maxWidth: '400px' }}>
+               {watchlist.filter(s => ![
+                  "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
+                  "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
+                ].includes(s)).map(s => (
+                 <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                   {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
                  </span>
                ))}
             </div>

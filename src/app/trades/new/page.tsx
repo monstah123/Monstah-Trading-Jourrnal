@@ -763,23 +763,41 @@ function NewTrade() {
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="flex gap-16 items-center">
                     <span className="card-title">📈 Trade Chart (Replay)</span>
-                    <form onSubmit={addToWatchlist} className="flex gap-4">
+                    <form onSubmit={addToWatchlist} className="flex gap-2 items-center">
                       <input
                         className="form-input"
-                        style={{ width: '120px', padding: '4px 8px', fontSize: '0.7rem', height: '28px' }}
-                        placeholder="Add to List..."
+                        style={{ width: '100px', padding: '4px 8px', fontSize: '0.7rem', height: '28px', borderRadius: '4px' }}
+                        placeholder="Symbol..."
                         value={newSymbol}
                         onChange={(e) => setNewSymbol(e.target.value)}
                         disabled={isUpdatingWatchlist}
                       />
-                      <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '0 8px', height: '28px', fontSize: '0.7rem' }} disabled={isUpdatingWatchlist}>
-                        Add
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ 
+                          width: '28px', 
+                          height: '28px', 
+                          padding: 0, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          fontSize: '1.1rem',
+                          borderRadius: '4px'
+                        }} 
+                        disabled={isUpdatingWatchlist}
+                        title="Add to Watchlist"
+                      >
+                        +
                       </button>
                     </form>
-                    <div className="flex gap-4 items-center">
-                       {watchlist.slice(-2).map(s => (
-                         <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                           {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'white', cursor: 'pointer', marginLeft: '4px' }}>×</button>
+                    <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap', maxWidth: '300px' }}>
+                       {watchlist.filter(s => ![
+                          "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
+                          "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
+                        ].includes(s)).map(s => (
+                         <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                           {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
                          </span>
                        ))}
                     </div>
