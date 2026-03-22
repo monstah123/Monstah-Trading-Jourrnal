@@ -24,6 +24,7 @@ export default function LiveChartPage() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [newSymbol, setNewSymbol] = useState("");
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -77,15 +78,34 @@ export default function LiveChartPage() {
     if (!newSymbol.trim() || !user) return;
     
     setIsUpdatingWatchlist(true);
-    const updated = [...new Set([...watchlist, newSymbol.trim().toUpperCase()])];
+    let sym = newSymbol.trim().toUpperCase();
+    
+    // Auto-prefix common pairs if missing
+    if (!sym.includes(":")) {
+      if (sym.length === 6) sym = `FX:${sym}`;
+      else if (["BTCUSD", "ETHUSD", "SOLUSD"].includes(sym)) sym = `BINANCE:${sym}`;
+    }
+
+    if (watchlist.includes(sym)) {
+      setToast({ message: `${sym} is already in your watchlist!`, type: "success" });
+      setNewSymbol("");
+      setIsUpdatingWatchlist(false);
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    const updated = [...new Set([...watchlist, sym])];
     try {
       await saveWatchlist(user.uid, updated);
       setWatchlist(updated);
       setNewSymbol("");
+      setToast({ message: `Added ${sym} to watchlist!`, type: "success" });
     } catch (err) {
       console.error("Save failed:", err);
+      setToast({ message: "Failed to save symbol.", type: "error" });
     } finally {
       setIsUpdatingWatchlist(false);
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -155,6 +175,26 @@ export default function LiveChartPage() {
             {chartFullscreen ? "↙ Exit Fullscreen" : "⛶ Fullscreen"}
           </button>
         </div>
+
+        {toast && (
+          <div 
+            style={{ 
+              position: 'fixed', 
+              top: '20px', 
+              right: '20px', 
+              padding: '12px 24px', 
+              background: toast.type === 'success' ? 'var(--profit)' : 'var(--loss)', 
+              color: 'white', 
+              borderRadius: '8px', 
+              zIndex: 1000,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              fontWeight: 600,
+              animation: 'slideIn 0.3s ease-out'
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
           <div id="live-chart-container" ref={chartContainerRef} className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>

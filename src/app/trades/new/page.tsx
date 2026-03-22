@@ -326,13 +326,30 @@ function NewTrade() {
     if (!newSymbol.trim() || !user) return;
     
     setIsUpdatingWatchlist(true);
-    const updated = [...new Set([...watchlist, newSymbol.trim().toUpperCase()])];
+    let sym = newSymbol.trim().toUpperCase();
+    
+    // Auto-prefix common pairs if missing
+    if (!sym.includes(":")) {
+      if (sym.length === 6) sym = `FX:${sym}`;
+      else if (["BTCUSD", "ETHUSD", "SOLUSD"].includes(sym)) sym = `BINANCE:${sym}`;
+    }
+
+    if (watchlist.includes(sym)) {
+      showToast(`${sym} is already in your watchlist!`, "success");
+      setNewSymbol("");
+      setIsUpdatingWatchlist(false);
+      return;
+    }
+
+    const updated = [...new Set([...watchlist, sym])];
     try {
       await saveWatchlist(user.uid, updated);
       setWatchlist(updated);
       setNewSymbol("");
+      showToast(`Added ${sym} to watchlist!`, "success");
     } catch (err) {
       console.error("Save failed:", err);
+      showToast("Failed to save symbol.", "error");
     } finally {
       setIsUpdatingWatchlist(false);
     }
