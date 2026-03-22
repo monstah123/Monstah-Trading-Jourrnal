@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/components/AuthProvider";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { getWatchlist, saveWatchlist } from "@/lib/storage";
 
 // Dynamically import TradingView widget to avoid SSR issues
 const AdvancedRealTimeChart = dynamic(
@@ -18,6 +19,11 @@ export default function LiveChartPage() {
   const [mounted, setMounted] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [chartFullscreen, setChartFullscreen] = useState(false);
+  
+  // Watchlist state
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [newSymbol, setNewSymbol] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -25,6 +31,13 @@ export default function LiveChartPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  // Fetch watchlist from Firestore on mount
+  useEffect(() => {
+    if (user) {
+      getWatchlist(user.uid).then(setWatchlist);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (chartFullscreen) {
@@ -46,23 +59,6 @@ export default function LiveChartPage() {
     };
   }, []);
 
-  useEffect(() => {
-    const el = chartContainerRef.current;
-    if (!el) return;
-
-    // Aggressively prevent default scrolling behavior when dragging inside the chart area
-    const preventScroll = (e: TouchEvent) => {
-      // ONLY prevent default if the touch originated inside our div's bounding box
-      e.preventDefault();
-    };
-
-    el.addEventListener("touchmove", preventScroll, { passive: false });
-    
-    return () => {
-      el.removeEventListener("touchmove", preventScroll);
-    };
-  }, []);
-
   if (!mounted || loading || !user) return null;
 
   const toggleFullscreen = () => {
@@ -76,6 +72,37 @@ export default function LiveChartPage() {
     }
   };
 
+  const addToWatchlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSymbol.trim() || !user) return;
+    
+    setIsUpdating(true);
+    const updated = [...new Set([...watchlist, newSymbol.trim().toUpperCase()])];
+    try {
+      await saveWatchlist(user.uid, updated);
+      setWatchlist(updated);
+      setNewSymbol("");
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const removeFromWatchlist = async (symbol: string) => {
+    if (!user) return;
+    setIsUpdating(true);
+    const updated = watchlist.filter(s => s !== symbol);
+    try {
+      await saveWatchlist(user.uid, updated);
+      setWatchlist(updated);
+    } catch (err) {
+      console.error("Remove failed:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="app-layout">
       <Sidebar />
@@ -83,7 +110,28 @@ export default function LiveChartPage() {
         <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2>Live Chart</h2>
-            <p className="text-muted">Analyze the markets in real-time with TradingView</p>
+            <div className="flex gap-8 items-center mt-8">
+              <form onSubmit={addToWatchlist} className="flex gap-4">
+                <input
+                  className="form-input"
+                  style={{ width: '140px', padding: '6px 12px', fontSize: '0.75rem', height: '32px' }}
+                  placeholder="Add e.g. NVDA"
+                  value={newSymbol}
+                  onChange={(e) => setNewSymbol(e.target.value)}
+                  disabled={isUpdating}
+                />
+                <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '0 12px', height: '32px' }} disabled={isUpdating}>
+                  Add
+                </button>
+              </form>
+              <div className="flex gap-4 items-center">
+                 {watchlist.slice(-3).map(s => (
+                   <span key={s} className="badge badge-secondary" style={{ fontSize: '0.65rem' }}>
+                     {s} <button onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'white', cursor: 'pointer', marginLeft: '4px' }}>×</button>
+                   </span>
+                 ))}
+              </div>
+            </div>
           </div>
           <button 
             type="button" 
@@ -96,7 +144,7 @@ export default function LiveChartPage() {
         </div>
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
-          <div id="live-chart-container" className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
+          <div id="live-chart-container" ref={chartContainerRef} className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
              <AdvancedRealTimeChart
                 theme="dark"
                 symbol="ICMARKETS:EURUSD"
@@ -112,17 +160,7 @@ export default function LiveChartPage() {
                 details={true}
                 hotlist={true}
                 calendar={true}
-                watchlist={[
-                  "FX:EURUSD",
-                  "FX:GBPUSD",
-                  "OANDA:XAUUSD",
-                  "BINANCE:BTCUSDT",
-                  "BINANCE:ETHUSDT",
-                  "AMEX:SPY",
-                  "NASDAQ:QQQ",
-                  "NASDAQ:TSLA",
-                  "NASDAQ:NVDA"
-                ]}
+                watchlist={watchlist}
                 show_popup_button={true}
                 container_id="tradingview_chart"
                 autosize

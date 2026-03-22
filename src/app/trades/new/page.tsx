@@ -8,6 +8,8 @@ import {
   generateId,
   getTradeById,
   uploadImage,
+  getWatchlist,
+  saveWatchlist,
 } from "@/lib/storage";
 import { calculatePnl, calculateRiskReward } from "@/lib/stats";
 import {
@@ -93,6 +95,11 @@ function NewTrade() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [chartFullscreen, setChartFullscreen] = useState(false);
 
+  // Watchlist state
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [newSymbol, setNewSymbol] = useState("");
+  const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
+
   useEffect(() => {
     if (chartFullscreen) {
       document.body.classList.add("scroll-locked");
@@ -112,6 +119,13 @@ function NewTrade() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
+
+  // Fetch watchlist from Firestore on mount
+  useEffect(() => {
+    if (user) {
+      getWatchlist(user.uid).then(setWatchlist);
+    }
+  }, [user]);
 
   useEffect(() => {
     const el = chartContainerRef.current;
@@ -304,6 +318,37 @@ function NewTrade() {
       showToast("Failed to save trade. Please check your connection.", "error");
       setIsUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const addToWatchlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSymbol.trim() || !user) return;
+    
+    setIsUpdatingWatchlist(true);
+    const updated = [...new Set([...watchlist, newSymbol.trim().toUpperCase()])];
+    try {
+      await saveWatchlist(user.uid, updated);
+      setWatchlist(updated);
+      setNewSymbol("");
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setIsUpdatingWatchlist(false);
+    }
+  };
+
+  const removeFromWatchlist = async (symbol: string) => {
+    if (!user) return;
+    setIsUpdatingWatchlist(true);
+    const updated = watchlist.filter(s => s !== symbol);
+    try {
+      await saveWatchlist(user.uid, updated);
+      setWatchlist(updated);
+    } catch (err) {
+      console.error("Remove failed:", err);
+    } finally {
+      setIsUpdatingWatchlist(false);
     }
   };
 
@@ -699,7 +744,29 @@ function NewTrade() {
             {form.symbol && (
               <div className="card mb-24">
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="card-title">📈 Trade Chart (Replay)</span>
+                  <div className="flex gap-16 items-center">
+                    <span className="card-title">📈 Trade Chart (Replay)</span>
+                    <form onSubmit={addToWatchlist} className="flex gap-4">
+                      <input
+                        className="form-input"
+                        style={{ width: '120px', padding: '4px 8px', fontSize: '0.7rem', height: '28px' }}
+                        placeholder="Add to List..."
+                        value={newSymbol}
+                        onChange={(e) => setNewSymbol(e.target.value)}
+                        disabled={isUpdatingWatchlist}
+                      />
+                      <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '0 8px', height: '28px', fontSize: '0.7rem' }} disabled={isUpdatingWatchlist}>
+                        Add
+                      </button>
+                    </form>
+                    <div className="flex gap-4 items-center">
+                       {watchlist.slice(-2).map(s => (
+                         <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                           {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'white', cursor: 'pointer', marginLeft: '4px' }}>×</button>
+                         </span>
+                       ))}
+                    </div>
+                  </div>
                   <button 
                     type="button" 
                     className="btn btn-ghost btn-sm" 
@@ -734,17 +801,7 @@ function NewTrade() {
                     details={true}
                     hotlist={true}
                     calendar={true}
-                    watchlist={[
-                      "FX:EURUSD",
-                      "FX:GBPUSD",
-                      "OANDA:XAUUSD",
-                      "BINANCE:BTCUSDT",
-                      "BINANCE:ETHUSDT",
-                      "AMEX:SPY",
-                      "NASDAQ:QQQ",
-                      "NASDAQ:TSLA",
-                      "NASDAQ:NVDA"
-                    ]}
+                    watchlist={watchlist}
                     show_popup_button={true}
                     container_id="tv_replay_chart"
                     autosize

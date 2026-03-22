@@ -153,6 +153,49 @@ export async function deletePlaybook(
   }
 }
 
+// Watchlist
+export async function getWatchlist(userId: string): Promise<string[]> {
+  if (!userId) return [];
+  try {
+    const docRef = doc(db, "settings", `${userId}_watchlist`);
+    const snapshot = await getDocs(query(collection(db, "settings"), where("userId", "==", userId), where("type", "==", "watchlist")));
+    if (snapshot.empty) {
+      return [
+        "FX:EURUSD",
+        "FX:GBPUSD",
+        "OANDA:XAUUSD",
+        "BINANCE:BTCUSDT",
+        "BINANCE:ETHUSDT",
+        "AMEX:SPY",
+        "NASDAQ:QQQ",
+        "NASDAQ:TSLA",
+        "NASDAQ:NVDA"
+      ];
+    }
+    const data = snapshot.docs[0].data();
+    return data.symbols || [];
+  } catch (error) {
+    console.error("Error fetching watchlist:", error);
+    return [];
+  }
+}
+
+export async function saveWatchlist(userId: string, symbols: string[]): Promise<void> {
+  if (!userId) return;
+  try {
+    const docRef = doc(db, "settings", `${userId}_watchlist`);
+    await setDoc(docRef, {
+      userId,
+      type: "watchlist",
+      symbols,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error saving watchlist:", error);
+    throw error;
+  }
+}
+
 // Generate unique ID
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
