@@ -103,6 +103,16 @@ function NewTrade() {
   }, [chartFullscreen]);
 
   useEffect(() => {
+    const handleFullscreenChange = () => {
+      setChartFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const el = chartContainerRef.current;
     if (!el) return;
 
@@ -679,9 +689,9 @@ function NewTrade() {
                         }
                       }
                     }}
-                    title="Toggle Fullscreen"
+                    title={chartFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen"}
                   >
-                    ⛶ Fullscreen
+                    {chartFullscreen ? "↙ Exit Fullscreen" : "⛶ Fullscreen"}
                   </button>
                 </div>
                 <div id="replay-chart-container" style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d", touchAction: "none" }}>

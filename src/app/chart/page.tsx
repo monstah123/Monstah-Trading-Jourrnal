@@ -17,6 +17,7 @@ export default function LiveChartPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [chartFullscreen, setChartFullscreen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -24,6 +25,26 @@ export default function LiveChartPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (chartFullscreen) {
+      document.body.classList.add("scroll-locked");
+      document.documentElement.classList.add("scroll-locked");
+    } else {
+      document.body.classList.remove("scroll-locked");
+      document.documentElement.classList.remove("scroll-locked");
+    }
+  }, [chartFullscreen]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setChartFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     const el = chartContainerRef.current;
@@ -44,15 +65,34 @@ export default function LiveChartPage() {
 
   if (!mounted || loading || !user) return null;
 
+  const toggleFullscreen = () => {
+    const chartEl = document.getElementById("live-chart-container");
+    if (chartEl) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
+      }
+    }
+  };
+
   return (
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2>Live Chart</h2>
             <p className="text-muted">Analyze the markets in real-time with TradingView</p>
           </div>
+          <button 
+            type="button" 
+            className="btn btn-ghost btn-sm" 
+            onClick={toggleFullscreen}
+            title="Toggle Fullscreen"
+          >
+            {chartFullscreen ? "↙ Exit Fullscreen" : "⛶ Fullscreen"}
+          </button>
         </div>
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
