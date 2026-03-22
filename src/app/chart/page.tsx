@@ -202,6 +202,7 @@ export default function LiveChartPage() {
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
           <div id="live-chart-container" ref={chartContainerRef} className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
              <AdvancedRealTimeChart
+                key={`live-chart-${watchlist.join(",")}`}
                 theme="dark"
                 symbol="ICMARKETS:EURUSD"
                 interval="60"

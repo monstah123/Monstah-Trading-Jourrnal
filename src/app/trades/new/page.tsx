@@ -822,6 +822,7 @@ function NewTrade() {
                 </div>
                 <div id="replay-chart-container" style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d", touchAction: "none" }}>
                   <AdvancedRealTimeChart
+                    key={`replay-chart-${watchlist.join(",")}`}
                     theme="dark"
                     symbol={form.symbol}
                     interval="15"
