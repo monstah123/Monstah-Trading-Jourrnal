@@ -17,7 +17,6 @@ export default function LiveChartPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [chartFullscreen, setChartFullscreen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -25,16 +24,6 @@ export default function LiveChartPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (chartFullscreen) {
-      document.body.classList.add("scroll-locked");
-      document.documentElement.classList.add("scroll-locked");
-    } else {
-      document.body.classList.remove("scroll-locked");
-      document.documentElement.classList.remove("scroll-locked");
-    }
-  }, [chartFullscreen]);
 
   useEffect(() => {
     const el = chartContainerRef.current;
@@ -51,7 +40,7 @@ export default function LiveChartPage() {
     return () => {
       el.removeEventListener("touchmove", preventScroll);
     };
-  }, [mounted]);
+  }, []);
 
   if (!mounted || loading || !user) return null;
 
@@ -59,53 +48,10 @@ export default function LiveChartPage() {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="page-header">
           <div>
             <h2>Live Chart</h2>
             <p className="text-muted">Analyze the markets in real-time with TradingView</p>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      type="button" 
-                      className="btn btn-primary btn-sm"
-                      onClick={() => {
-                        const isLocked = document.body.classList.contains('scroll-locked');
-                        if (isLocked) {
-                          document.body.classList.remove('scroll-locked');
-                          document.documentElement.classList.remove('scroll-locked');
-                          (document.getElementById('scroll-lock-btn') as HTMLElement).innerHTML = '🔓 Lock Scroll to Draw';
-                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.remove('btn-danger');
-                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.add('btn-primary');
-                        } else {
-                          document.body.classList.add('scroll-locked');
-                          document.documentElement.classList.add('scroll-locked');
-                          (document.getElementById('scroll-lock-btn') as HTMLElement).innerHTML = '🔒 Scroll Locked (Draw Safely!)';
-                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.add('btn-danger');
-                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.remove('btn-primary');
-                        }
-                      }}
-                      id="scroll-lock-btn"
-                      title="Lock screen scroll to draw perfectly on mobile"
-                    >
-                      🔓 Lock Scroll to Draw
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn btn-ghost btn-sm" 
-                      onClick={() => {
-                        const chartEl = document.getElementById("live-chart-container");
-                        if (chartEl) {
-                          if (document.fullscreenElement) {
-                            document.exitFullscreen();
-                          } else {
-                            chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
-                          }
-                        }
-                      }}
-                      title="Toggle Fullscreen"
-                    >
-                      ⛶ Fullscreen
-                    </button>
           </div>
         </div>
 
