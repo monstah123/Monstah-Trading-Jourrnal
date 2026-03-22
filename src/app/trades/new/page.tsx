@@ -663,24 +663,54 @@ function NewTrade() {
               </div>
             </div>
             {form.symbol && (
-              <div 
-                className={chartFullscreen ? "" : "card mb-24"}
-                style={chartFullscreen ? { position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 99999, background: "#13131d", padding: "16px", display: "flex", flexDirection: "column" } : {}}
-              >
+              <div className="card mb-24">
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="card-title">📈 Trade Chart (Replay)</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
                       type="button" 
-                      className="btn btn-primary btn-sm" 
-                      onClick={() => setChartFullscreen(!chartFullscreen)}
-                      title="Force CSS Full Screen"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        const isLocked = document.body.classList.contains('scroll-locked');
+                        if (isLocked) {
+                          document.body.classList.remove('scroll-locked');
+                          document.documentElement.classList.remove('scroll-locked');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).innerHTML = '🔓 Lock Scroll to Draw';
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.remove('btn-danger');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.add('btn-primary');
+                        } else {
+                          document.body.classList.add('scroll-locked');
+                          document.documentElement.classList.add('scroll-locked');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).innerHTML = '🔒 Scroll Locked (Draw Safely!)';
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.add('btn-danger');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.remove('btn-primary');
+                        }
+                      }}
+                      id="scroll-lock-btn"
+                      title="Lock screen scroll to draw perfectly on mobile"
                     >
-                      {chartFullscreen ? "❌ Close Fullscreen" : "⛶ True Fullscreen"}
+                      🔓 Lock Scroll to Draw
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-ghost btn-sm" 
+                      onClick={() => {
+                        const chartEl = document.getElementById("replay-chart-container");
+                        if (chartEl) {
+                          if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                          } else {
+                            chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
+                          }
+                        }
+                      }}
+                      title="Toggle Fullscreen"
+                    >
+                      ⛶ Fullscreen
                     </button>
                   </div>
                 </div>
-                <div ref={chartContainerRef} id="replay-chart-container" style={{ flex: 1, minHeight: chartFullscreen ? "auto" : "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d", touchAction: "none" }}>
+                <div id="replay-chart-container" style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d", touchAction: "none" }}>
                   <AdvancedRealTimeChart
                     theme="dark"
                     symbol={form.symbol}

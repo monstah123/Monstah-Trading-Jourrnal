@@ -64,18 +64,53 @@ export default function LiveChartPage() {
             <h2>Live Chart</h2>
             <p className="text-muted">Analyze the markets in real-time with TradingView</p>
           </div>
-          <button 
-            type="button" 
-            className="btn btn-secondary" 
-            onClick={() => setChartFullscreen(!chartFullscreen)}
-            title="Force CSS Full Screen"
-          >
-            {chartFullscreen ? "❌ Close Fullscreen" : "⛶ True Fullscreen"}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      type="button" 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        const isLocked = document.body.classList.contains('scroll-locked');
+                        if (isLocked) {
+                          document.body.classList.remove('scroll-locked');
+                          document.documentElement.classList.remove('scroll-locked');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).innerHTML = '🔓 Lock Scroll to Draw';
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.remove('btn-danger');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.add('btn-primary');
+                        } else {
+                          document.body.classList.add('scroll-locked');
+                          document.documentElement.classList.add('scroll-locked');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).innerHTML = '🔒 Scroll Locked (Draw Safely!)';
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.add('btn-danger');
+                          (document.getElementById('scroll-lock-btn') as HTMLElement).classList.remove('btn-primary');
+                        }
+                      }}
+                      id="scroll-lock-btn"
+                      title="Lock screen scroll to draw perfectly on mobile"
+                    >
+                      🔓 Lock Scroll to Draw
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-ghost btn-sm" 
+                      onClick={() => {
+                        const chartEl = document.getElementById("live-chart-container");
+                        if (chartEl) {
+                          if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                          } else {
+                            chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
+                          }
+                        }
+                      }}
+                      title="Toggle Fullscreen"
+                    >
+                      ⛶ Fullscreen
+                    </button>
+          </div>
         </div>
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
-          <div ref={chartContainerRef} id="live-chart-container" className="card" style={chartFullscreen ? { position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 99999, background: "#13131d", padding: "16px", display: "flex", flexDirection: "column"} : { flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
+          <div id="live-chart-container" className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
              <AdvancedRealTimeChart
                 theme="dark"
                 symbol="ICMARKETS:EURUSD"
