@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/components/AuthProvider";
 import dynamic from "next/dynamic";
@@ -16,6 +16,7 @@ export default function LiveChartPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -23,6 +24,23 @@ export default function LiveChartPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return;
+
+    // Aggressively prevent default scrolling behavior when dragging inside the chart area
+    const preventScroll = (e: TouchEvent) => {
+      // ONLY prevent default if the touch originated inside our div's bounding box
+      e.preventDefault();
+    };
+
+    el.addEventListener("touchmove", preventScroll, { passive: false });
+    
+    return () => {
+      el.removeEventListener("touchmove", preventScroll);
+    };
+  }, [mounted]);
 
   if (!mounted || loading || !user) return null;
 
@@ -55,7 +73,7 @@ export default function LiveChartPage() {
         </div>
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
-          <div id="live-chart-container" className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
+          <div ref={chartContainerRef} id="live-chart-container" className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
              <AdvancedRealTimeChart
                 theme="dark"
                 symbol="ICMARKETS:EURUSD"

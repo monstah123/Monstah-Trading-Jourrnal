@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import {
@@ -89,6 +89,24 @@ function NewTrade() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return;
+
+    // Aggressively prevent default scrolling behavior when dragging inside the chart area
+    const preventScroll = (e: TouchEvent) => {
+      // ONLY prevent default if the touch originated inside our div's bounding box
+      e.preventDefault();
+    };
+
+    el.addEventListener("touchmove", preventScroll, { passive: false });
+    
+    return () => {
+      el.removeEventListener("touchmove", preventScroll);
+    };
+  }, []);
 
   const [form, setForm] = useState({
     symbol: "",
@@ -656,7 +674,7 @@ function NewTrade() {
                     ⛶ Fullscreen
                   </button>
                 </div>
-                <div id="replay-chart-container" style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d", touchAction: "none" }}>
+                <div ref={chartContainerRef} id="replay-chart-container" style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d", touchAction: "none" }}>
                   <AdvancedRealTimeChart
                     theme="dark"
                     symbol={form.symbol}
