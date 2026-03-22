@@ -95,8 +95,10 @@ function NewTrade() {
   useEffect(() => {
     if (chartFullscreen) {
       document.body.classList.add("scroll-locked");
+      document.documentElement.classList.add("scroll-locked");
     } else {
       document.body.classList.remove("scroll-locked");
+      document.documentElement.classList.remove("scroll-locked");
     }
   }, [chartFullscreen]);
 
