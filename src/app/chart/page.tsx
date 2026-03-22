@@ -17,6 +17,7 @@ export default function LiveChartPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [chartFullscreen, setChartFullscreen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -24,6 +25,14 @@ export default function LiveChartPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (chartFullscreen) {
+      document.body.classList.add("scroll-locked");
+    } else {
+      document.body.classList.remove("scroll-locked");
+    }
+  }, [chartFullscreen]);
 
   useEffect(() => {
     const el = chartContainerRef.current;
@@ -56,24 +65,15 @@ export default function LiveChartPage() {
           <button 
             type="button" 
             className="btn btn-secondary" 
-            onClick={() => {
-              const chartEl = document.getElementById("live-chart-container");
-              if (chartEl) {
-                if (document.fullscreenElement) {
-                  document.exitFullscreen();
-                } else {
-                  chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
-                }
-              }
-            }}
-            title="Toggle Fullscreen"
+            onClick={() => setChartFullscreen(!chartFullscreen)}
+            title="Force CSS Full Screen"
           >
-            ⛶ Fullscreen
+            {chartFullscreen ? "❌ Close Fullscreen" : "⛶ True Fullscreen"}
           </button>
         </div>
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
-          <div ref={chartContainerRef} id="live-chart-container" className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
+          <div ref={chartContainerRef} id="live-chart-container" className="card" style={chartFullscreen ? { position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 99999, background: "#13131d", padding: "16px", display: "flex", flexDirection: "column"} : { flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
              <AdvancedRealTimeChart
                 theme="dark"
                 symbol="ICMARKETS:EURUSD"
