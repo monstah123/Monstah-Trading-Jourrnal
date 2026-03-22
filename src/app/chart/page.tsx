@@ -30,15 +30,32 @@ export default function LiveChartPage() {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header">
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2>Live Chart</h2>
             <p className="text-muted">Analyze the markets in real-time with TradingView</p>
           </div>
+          <button 
+            type="button" 
+            className="btn btn-secondary" 
+            onClick={() => {
+              const chartEl = document.getElementById("live-chart-container");
+              if (chartEl) {
+                if (document.fullscreenElement) {
+                  document.exitFullscreen();
+                } else {
+                  chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
+                }
+              }
+            }}
+            title="Toggle Fullscreen"
+          >
+            ⛶ Fullscreen
+          </button>
         </div>
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
-          <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px" }}>
+          <div id="live-chart-container" className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d" }}>
              <AdvancedRealTimeChart
                 theme="dark"
                 symbol="ICMARKETS:EURUSD"

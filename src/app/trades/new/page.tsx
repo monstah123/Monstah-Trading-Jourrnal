@@ -636,10 +636,27 @@ function NewTrade() {
 
             {form.symbol && (
               <div className="card mb-24">
-                <div className="card-header">
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="card-title">📈 Trade Chart (Replay)</span>
+                  <button 
+                    type="button" 
+                    className="btn btn-ghost btn-sm" 
+                    onClick={() => {
+                      const chartEl = document.getElementById("replay-chart-container");
+                      if (chartEl) {
+                        if (document.fullscreenElement) {
+                          document.exitFullscreen();
+                        } else {
+                          chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
+                        }
+                      }
+                    }}
+                    title="Toggle Fullscreen"
+                  >
+                    ⛶ Fullscreen
+                  </button>
                 </div>
-                <div style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden" }}>
+                <div id="replay-chart-container" style={{ height: "400px", width: "100%", borderRadius: "8px", overflow: "hidden", background: "#13131d" }}>
                   <AdvancedRealTimeChart
                     theme="dark"
                     symbol={form.symbol}
