@@ -107,6 +107,12 @@ export default function LiveChartPage() {
                 enable_publishing={false}
                 hide_side_toolbar={false}
                 allow_symbol_change={true}
+                withdateranges={true}
+                save_image={true}
+                details={true}
+                hotlist={true}
+                calendar={true}
+                show_popup_button={true}
                 container_id="tradingview_chart"
                 autosize
               />

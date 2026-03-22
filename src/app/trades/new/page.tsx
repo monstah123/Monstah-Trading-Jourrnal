@@ -17,6 +17,7 @@ import {
   TradeSetup,
   Emotion,
   QuantityType,
+  TradeType,
 } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import dynamic from "next/dynamic";
@@ -152,6 +153,7 @@ function NewTrade() {
     entryTime: "",
     exitTime: "",
     status: "closed" as "open" | "closed",
+    tradeType: "live" as TradeType,
   });
 
   useEffect(() => {
@@ -183,6 +185,7 @@ function NewTrade() {
             entryTime: trade.entryTime?.split("T")[1]?.substring(0, 5) || "",
             exitTime: trade.exitTime?.split("T")[1]?.substring(0, 5) || "",
             status: trade.status,
+            tradeType: trade.tradeType || "live",
           });
         }
       });
@@ -247,6 +250,7 @@ function NewTrade() {
       assetClass: form.assetClass,
       direction: form.direction,
       status: form.status,
+      tradeType: form.tradeType,
       entryPrice: parseFloat(form.entryPrice),
       exitPrice: form.exitPrice ? parseFloat(form.exitPrice) : null,
       quantity: parseFloat(form.quantity),
@@ -366,21 +370,41 @@ function NewTrade() {
             <div className="card mb-24">
               <div className="card-header">
                 <span className="card-title">📝 Trade Details</span>
-                <div className="flex gap-8">
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${form.status === "closed" ? "btn-primary" : "btn-secondary"}`}
-                    onClick={() => handleChange("status", "closed")}
-                  >
-                    Closed
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${form.status === "open" ? "btn-primary" : "btn-secondary"}`}
-                    onClick={() => handleChange("status", "open")}
-                  >
-                    Open
-                  </button>
+                <div className="flex gap-16 items-center">
+                  <div className="flex gap-4" style={{ padding: '4px', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)' }}>
+                    <button
+                      type="button"
+                      className={`btn btn-xs ${form.tradeType === "live" ? "btn-primary" : "btn-ghost"}`}
+                      onClick={() => handleChange("tradeType", "live")}
+                      style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                    >
+                      Live
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-xs ${form.tradeType === "backtest" ? "btn-primary" : "btn-ghost"}`}
+                      onClick={() => handleChange("tradeType", "backtest")}
+                      style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                    >
+                      Backtest
+                    </button>
+                  </div>
+                  <div className="flex gap-8">
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${form.status === "closed" ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => handleChange("status", "closed")}
+                    >
+                      Closed
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${form.status === "open" ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => handleChange("status", "open")}
+                    >
+                      Open
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="form-row">
@@ -705,6 +729,12 @@ function NewTrade() {
                     enable_publishing={false}
                     hide_side_toolbar={false}
                     allow_symbol_change={true}
+                    withdateranges={true}
+                    save_image={true}
+                    details={true}
+                    hotlist={true}
+                    calendar={true}
+                    show_popup_button={true}
                     container_id="tv_replay_chart"
                     autosize
                   />

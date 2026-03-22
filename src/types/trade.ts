@@ -1,5 +1,6 @@
 export type TradeDirection = "long" | "short";
 export type TradeStatus = "open" | "closed";
+export type TradeType = "live" | "backtest";
 export type AssetClass = "stocks" | "options" | "futures" | "forex" | "crypto";
 export type Emotion =
   | "confident"
@@ -38,6 +39,7 @@ export interface Trade {
   assetClass: AssetClass;
   direction: TradeDirection;
   status: TradeStatus;
+  tradeType: TradeType;
   entryPrice: number;
   exitPrice: number | null;
   quantity: number;

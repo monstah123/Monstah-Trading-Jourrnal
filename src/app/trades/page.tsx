@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import { getTrades, deleteTrade, saveTrade, generateId } from "@/lib/storage";
-import { Trade, AssetClass, TradeSetup } from "@/types/trade";
+import { Trade, AssetClass, TradeSetup, TradeType } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
 import Papa from "papaparse";
@@ -17,6 +17,7 @@ export default function TradesPage() {
   const [filterResult, setFilterResult] = useState<"all" | "win" | "loss">(
     "all",
   );
+  const [filterType, setFilterType] = useState<TradeType | "all">("all");
   const [searchSymbol, setSearchSymbol] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "pnl" | "symbol">("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -92,6 +93,7 @@ export default function TradesPage() {
               exitTime: null,
               strategy: "CSV Strategy",
               riskReward: parseFloat(String(getFuzzyKey("r:r", "rr", "risk reward") || "0").replace(/R/ig, '')) || null,
+              tradeType: "live",
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
@@ -128,6 +130,7 @@ export default function TradesPage() {
   const filtered = trades
     .filter((t) => filterAsset === "all" || t.assetClass === filterAsset)
     .filter((t) => filterSetup === "all" || t.setup === filterSetup)
+    .filter((t) => filterType === "all" || (t.tradeType || "live") === filterType)
     .filter((t) => {
       if (filterResult === "win") return (t.pnl ?? 0) > 0;
       if (filterResult === "loss") return (t.pnl ?? 0) < 0;
@@ -258,6 +261,22 @@ export default function TradesPage() {
                 <option value="swing">Swing</option>
                 <option value="gap_fill">Gap Fill</option>
                 <option value="momentum">Momentum</option>
+              </select>
+              <select
+                className="form-select"
+                style={{
+                  width: "130px",
+                  padding: "8px 14px",
+                  fontSize: "0.85rem",
+                }}
+                value={filterType}
+                onChange={(e) =>
+                  setFilterType(e.target.value as TradeType | "all")
+                }
+              >
+                <option value="all">Live &amp; B-Test</option>
+                <option value="live">Live Only</option>
+                <option value="backtest">Backtest Only</option>
               </select>
               <div className="flex gap-8">
                 {(["all", "win", "loss"] as const).map((f) => (
