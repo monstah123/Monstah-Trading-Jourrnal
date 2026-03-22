@@ -23,7 +23,7 @@ export default function LiveChartPage() {
   // Watchlist state
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [newSymbol, setNewSymbol] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -76,7 +76,7 @@ export default function LiveChartPage() {
     e.preventDefault();
     if (!newSymbol.trim() || !user) return;
     
-    setIsUpdating(true);
+    setIsUpdatingWatchlist(true);
     const updated = [...new Set([...watchlist, newSymbol.trim().toUpperCase()])];
     try {
       await saveWatchlist(user.uid, updated);
@@ -85,13 +85,13 @@ export default function LiveChartPage() {
     } catch (err) {
       console.error("Save failed:", err);
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingWatchlist(false);
     }
   };
 
   const removeFromWatchlist = async (symbol: string) => {
     if (!user) return;
-    setIsUpdating(true);
+    setIsUpdatingWatchlist(true);
     const updated = watchlist.filter(s => s !== symbol);
     try {
       await saveWatchlist(user.uid, updated);
@@ -99,7 +99,7 @@ export default function LiveChartPage() {
     } catch (err) {
       console.error("Remove failed:", err);
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingWatchlist(false);
     }
   };
 
@@ -107,37 +107,50 @@ export default function LiveChartPage() {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2>Live Chart</h2>
-            <div className="flex gap-8 items-center mt-8">
-              <form onSubmit={addToWatchlist} className="flex gap-4">
-                <input
-                  className="form-input"
-                  style={{ width: '140px', padding: '6px 12px', fontSize: '0.75rem', height: '32px' }}
-                  placeholder="Add e.g. NVDA"
-                  value={newSymbol}
-                  onChange={(e) => setNewSymbol(e.target.value)}
-                  disabled={isUpdating}
-                />
-                <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '0 12px', height: '32px' }} disabled={isUpdating}>
-                  Add
-                </button>
-              </form>
-              <div className="flex gap-4 items-center">
-                 {watchlist.slice(-3).map(s => (
-                   <span key={s} className="badge badge-secondary" style={{ fontSize: '0.65rem' }}>
-                     {s} <button onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'white', cursor: 'pointer', marginLeft: '4px' }}>×</button>
-                   </span>
-                 ))}
-              </div>
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="flex gap-16 items-center">
+            <span className="card-title">📈 Live Chart</span>
+            <form onSubmit={addToWatchlist} className="flex gap-2 items-center">
+              <input
+                className="form-input"
+                style={{ width: '100px', padding: '4px 8px', fontSize: '0.7rem', height: '28px', borderRadius: '4px' }}
+                placeholder="Symbol..."
+                value={newSymbol}
+                onChange={(e) => setNewSymbol(e.target.value)}
+                disabled={isUpdatingWatchlist}
+              />
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                style={{ 
+                  width: '28px', 
+                  height: '28px', 
+                  padding: 0, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '1.1rem',
+                  borderRadius: '4px'
+                }} 
+                disabled={isUpdatingWatchlist}
+                title="Add to Watchlist"
+              >
+                +
+              </button>
+            </form>
+            <div className="flex gap-4 items-center">
+               {watchlist.slice(-2).map(s => (
+                 <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                   {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'white', cursor: 'pointer', marginLeft: '4px' }}>×</button>
+                 </span>
+               ))}
             </div>
           </div>
           <button 
             type="button" 
             className="btn btn-ghost btn-sm" 
             onClick={toggleFullscreen}
-            title="Toggle Fullscreen"
+            title={chartFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen"}
           >
             {chartFullscreen ? "↙ Exit Fullscreen" : "⛶ Fullscreen"}
           </button>
