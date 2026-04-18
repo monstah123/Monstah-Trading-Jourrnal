@@ -23,6 +23,7 @@ export default function LiveChartPage() {
   // Watchlist state
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [newSymbol, setNewSymbol] = useState("");
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("ICMARKETS:EURUSD");
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -37,9 +38,22 @@ export default function LiveChartPage() {
   useEffect(() => {
     if (user) {
       getWatchlist(user.uid).then(setWatchlist);
+      
+      // Load last viewed symbol from localStorage
+      const savedSymbol = localStorage.getItem(`last-symbol-${user.uid}`);
+      if (savedSymbol) {
+        setSelectedSymbol(savedSymbol);
+      }
     }
   }, [user]);
 
+  const handleSymbolChange = (symbol: string) => {
+    setSelectedSymbol(symbol);
+    if (user) {
+      localStorage.setItem(`last-symbol-${user.uid}`, symbol);
+    }
+  };
+ Broadway
   useEffect(() => {
     if (chartFullscreen) {
       document.body.classList.add("scroll-locked");
@@ -159,14 +173,50 @@ export default function LiveChartPage() {
               </button>
             </form>
             <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap', maxWidth: '400px' }}>
-               {watchlist.filter(s => ![
+               {[
+                  "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
+                  "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
+                ].map(s => (
+                  <span 
+                    key={s} 
+                    className={`badge badge-secondary ${selectedSymbol === s ? 'active' : ''}`}
+                    style={{ 
+                      fontSize: '0.6rem', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      cursor: 'pointer',
+                      border: selectedSymbol === s ? '1px solid var(--accent-primary)' : '1px solid transparent',
+                      opacity: watchlist.includes(s) || [
+                        "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
+                        "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
+                      ].includes(s) ? 1 : 0.6
+                    }}
+                    onClick={() => handleSymbolChange(s)}
+                  >
+                    {s}
+                  </span>
+                ))}
+                {watchlist.filter(s => ![
                   "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
                   "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
                 ].includes(s)).map(s => (
-                 <span key={s} className="badge badge-secondary" style={{ fontSize: '0.6rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                   {s} <button type="button" onClick={() => removeFromWatchlist(s)} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
-                 </span>
-               ))}
+                  <span 
+                    key={s} 
+                    className={`badge badge-secondary ${selectedSymbol === s ? 'active' : ''}`} 
+                    style={{ 
+                      fontSize: '0.6rem', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      cursor: 'pointer',
+                      border: selectedSymbol === s ? '1px solid var(--accent-primary)' : '1px solid transparent'
+                    }}
+                    onClick={() => handleSymbolChange(s)}
+                  >
+                    {s} <button type="button" onClick={(e) => { e.stopPropagation(); removeFromWatchlist(s); }} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
+                  </span>
+                ))}
             </div>
           </div>
           <button 
@@ -202,9 +252,9 @@ export default function LiveChartPage() {
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
           <div id="live-chart-container" ref={chartContainerRef} className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
              <AdvancedRealTimeChart
-                key={`live-chart-${watchlist.join(",")}`}
+                key="live-trading-chart-stable"
                 theme="dark"
-                symbol="ICMARKETS:EURUSD"
+                symbol={selectedSymbol}
                 interval="60"
                 timezone="Etc/UTC"
                 style="1"
