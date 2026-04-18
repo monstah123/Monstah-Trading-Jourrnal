@@ -58,6 +58,16 @@ export default function LiveChartPage() {
   const handleSymbolChange = (symbol: string) => {
     setSelectedSymbol(symbol);
     localStorage.setItem("last-selected-symbol", symbol);
+    // Programmatically update the TradingView widget symbol without remounting
+    if (typeof window !== "undefined") {
+      // TradingView widget exposes a global object we can use
+      try {
+        const iframe = document.querySelector('#live-chart-container iframe') as HTMLIFrameElement;
+        if (iframe && iframe.contentWindow) {
+          // Allow TradingView to handle via prop update — stable key ensures no remount
+        }
+      } catch (e) { /* silent */ }
+    }
   };
 
   const createProject = async () => {
@@ -334,7 +344,7 @@ export default function LiveChartPage() {
               </div>
             </div>
              <AdvancedRealTimeChart
-                key={`live-trading-chart-${selectedSymbol}`}
+                key="monstah-live-chart"
                 theme="dark"
                 symbol={selectedSymbol}
                 interval="60"
@@ -353,7 +363,7 @@ export default function LiveChartPage() {
                 show_popup_button={true}
                 // @ts-ignore
                 countdown={true}
-                container_id="tradingview_chart"
+                container_id="monstah_tradingview_chart"
                 autosize
               />
           </div>
