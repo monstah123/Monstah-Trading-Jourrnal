@@ -189,6 +189,31 @@ export async function saveWatchlist(userId: string, symbols: string[]): Promise<
   }
 }
 
+// Chart Projects
+const PROJECTS_KEY = "monstah_chart_projects";
+
+export async function getChartProjects(userId: string): Promise<any[]> {
+  if (typeof window === "undefined" || !userId) return [];
+  try {
+    const saved = localStorage.getItem(`${PROJECTS_KEY}_${userId}`);
+    if (!saved) return [];
+    return JSON.parse(saved);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    return [];
+  }
+}
+
+export async function saveChartProject(userId: string, projects: any[]): Promise<void> {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    localStorage.setItem(`${PROJECTS_KEY}_${userId}`, JSON.stringify(projects));
+  } catch (error) {
+    console.error("Error saving projects:", error);
+    throw error;
+  }
+}
+
 // Generate unique ID
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;

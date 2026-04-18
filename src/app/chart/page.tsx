@@ -5,7 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/components/AuthProvider";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { getWatchlist, saveWatchlist } from "@/lib/storage";
+import { getWatchlist, saveWatchlist, getChartProjects, saveChartProject, generateId } from "@/lib/storage";
+import { ChartProject } from "@/types/trade";
 
 // Dynamically import TradingView widget to avoid SSR issues
 const AdvancedRealTimeChart = dynamic(
@@ -20,10 +21,17 @@ export default function LiveChartPage() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [chartFullscreen, setChartFullscreen] = useState(false);
   
-  // Watchlist state
+  // Watchlist & Projects state
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [projects, setProjects] = useState<ChartProject[]>([]);
   const [newSymbol, setNewSymbol] = useState("");
-  const [selectedSymbol, setSelectedSymbol] = useState<string>("ICMARKETS:EURUSD");
+  const [projectName, setProjectName] = useState("");
+  const [selectedSymbol, setSelectedSymbol] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("last-selected-symbol") || "ICMARKETS:EURUSD";
+    }
+    return "ICMARKETS:EURUSD";
+  });
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -34,13 +42,13 @@ export default function LiveChartPage() {
     }
   }, [user, loading, router]);
 
-  // Fetch watchlist from Firestore on mount
+  // Fetch watchlist & projects from Firestore/LocalStorage on mount
   useEffect(() => {
     if (user) {
       getWatchlist(user.uid).then(setWatchlist);
+      getChartProjects(user.uid).then(setProjects);
       
-      // Load last viewed symbol from localStorage
-      const savedSymbol = localStorage.getItem(`last-symbol-${user.uid}`);
+      const savedSymbol = localStorage.getItem("last-selected-symbol");
       if (savedSymbol) {
         setSelectedSymbol(savedSymbol);
       }
@@ -49,8 +57,40 @@ export default function LiveChartPage() {
 
   const handleSymbolChange = (symbol: string) => {
     setSelectedSymbol(symbol);
-    if (user) {
-      localStorage.setItem(`last-symbol-${user.uid}`, symbol);
+    localStorage.setItem("last-selected-symbol", symbol);
+  };
+
+  const createProject = async () => {
+    if (!projectName.trim() || !user) return;
+    
+    const newProject: ChartProject = {
+      id: generateId(),
+      name: projectName.trim(),
+      symbol: selectedSymbol,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updated = [newProject, ...projects];
+    try {
+      await saveChartProject(user.uid, updated);
+      setProjects(updated);
+      setProjectName("");
+      setToast({ message: "Project saved! 📁", type: "success" });
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      setToast({ message: "Failed to save project", type: "error" });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    if (!user) return;
+    const updated = projects.filter(p => p.id !== id);
+    try {
+      await saveChartProject(user.uid, updated);
+      setProjects(updated);
+    } catch (err) {
+      console.error("Delete failed:", err);
     }
   };
 
@@ -251,6 +291,48 @@ export default function LiveChartPage() {
 
         <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
           <div id="live-chart-container" ref={chartContainerRef} className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
+            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div className="flex gap-8 items-center" style={{ flex: 1, overflowX: 'auto', paddingBottom: '4px' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>📁 Projects:</span>
+                {projects.length === 0 ? (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No saved projects yet</span>
+                ) : (
+                  projects.map(p => (
+                    <div 
+                      key={p.id} 
+                      className={`badge ${selectedSymbol === p.symbol ? 'badge-primary' : 'badge-secondary'}`}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '4px 10px' }}
+                      onClick={() => handleSymbolChange(p.symbol)}
+                    >
+                      <span>{p.name} ({p.symbol})</span>
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
+                        style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', padding: 0, cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-8 items-center">
+                <input
+                  className="form-input"
+                  style={{ width: '160px', padding: '4px 8px', fontSize: '0.7rem', height: '28px', borderRadius: '4px' }}
+                  placeholder="Project name..."
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                />
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={createProject}
+                  style={{ height: '28px', fontSize: '0.7rem' }}
+                >
+                  💾 Save Project
+                </button>
+              </div>
+            </div>
              <AdvancedRealTimeChart
                 key={`live-trading-chart-${selectedSymbol}`}
                 theme="dark"

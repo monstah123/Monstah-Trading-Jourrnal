@@ -137,3 +137,9 @@ export interface Playbook {
   createdAt: string;
   updatedAt: string;
 }
+export interface ChartProject {
+  id: string;
+  name: string;
+  symbol: string;
+  createdAt: string;
+}
