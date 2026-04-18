@@ -221,7 +221,7 @@ export default function AICoachPage() {
                     }}
                   />
                 ) : (
-                  <p>{msg.content}</p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{msg.content}</p>
                 )}
               </div>
             ))}

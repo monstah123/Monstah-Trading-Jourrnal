@@ -491,15 +491,16 @@ export default function JournalPage() {
                               >
                                 Pre-Market
                               </div>
-                              <p
+                              <div
                                 style={{
                                   fontSize: "0.85rem",
                                   color: "var(--text-secondary)",
                                   lineHeight: 1.6,
+                                  whiteSpace: "pre-wrap",
                                 }}
                               >
                                 {entry.preMarketNotes}
-                              </p>
+                              </div>
                             </div>
                           )}
                           {entry.postMarketNotes && (
@@ -510,15 +511,16 @@ export default function JournalPage() {
                               >
                                 Post-Market
                               </div>
-                              <p
+                              <div
                                 style={{
                                   fontSize: "0.85rem",
                                   color: "var(--text-secondary)",
                                   lineHeight: 1.6,
+                                  whiteSpace: "pre-wrap",
                                 }}
                               >
                                 {entry.postMarketNotes}
-                              </p>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -530,14 +532,15 @@ export default function JournalPage() {
                             >
                               💡 Lessons
                             </div>
-                            <p
+                            <div
                               style={{
                                 fontSize: "0.85rem",
                                 color: "var(--text-secondary)",
+                                whiteSpace: "pre-wrap",
                               }}
                             >
                               {entry.lessonsLearned}
-                            </p>
+                            </div>
                           </div>
                         )}
                         {entry.goalsForTomorrow && (
@@ -548,14 +551,15 @@ export default function JournalPage() {
                             >
                               🎯 Goals
                             </div>
-                            <p
+                            <div
                               style={{
                                 fontSize: "0.85rem",
                                 color: "var(--text-secondary)",
+                                whiteSpace: "pre-wrap",
                               }}
                             >
                               {entry.goalsForTomorrow}
-                            </p>
+                            </div>
                           </div>
                         )}
 
