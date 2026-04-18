@@ -33,6 +33,7 @@ export default function LiveChartPage() {
     return "ICMARKETS:EURUSD";
   });
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
+  const [isChartLoading, setIsChartLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
@@ -56,18 +57,11 @@ export default function LiveChartPage() {
   }, [user]);
 
   const handleSymbolChange = (symbol: string) => {
+    if (symbol === selectedSymbol) return;
+    setIsChartLoading(true);
     setSelectedSymbol(symbol);
     localStorage.setItem("last-selected-symbol", symbol);
-    // Programmatically update the TradingView widget symbol without remounting
-    if (typeof window !== "undefined") {
-      // TradingView widget exposes a global object we can use
-      try {
-        const iframe = document.querySelector('#live-chart-container iframe') as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow) {
-          // Allow TradingView to handle via prop update — stable key ensures no remount
-        }
-      } catch (e) { /* silent */ }
-    }
+    setTimeout(() => setIsChartLoading(false), 1500);
   };
 
   const createProject = async () => {
@@ -343,8 +337,15 @@ export default function LiveChartPage() {
                 </button>
               </div>
             </div>
-             <AdvancedRealTimeChart
-                key="monstah-live-chart"
+             <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
+               {isChartLoading && (
+                 <div style={{ position: 'absolute', inset: 0, background: '#13131d', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
+                   <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Loading {selectedSymbol}...</span>
+                 </div>
+               )}
+               <AdvancedRealTimeChart
+                key={`monstah-chart-${selectedSymbol}`}
                 theme="dark"
                 symbol={selectedSymbol}
                 interval="60"
@@ -366,6 +367,7 @@ export default function LiveChartPage() {
                 container_id="monstah_tradingview_chart"
                 autosize
               />
+             </div>
           </div>
         </div>
       </main>
