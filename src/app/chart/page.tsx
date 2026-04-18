@@ -53,7 +53,7 @@ export default function LiveChartPage() {
       localStorage.setItem(`last-symbol-${user.uid}`, symbol);
     }
   };
- Broadway
+
   useEffect(() => {
     if (chartFullscreen) {
       document.body.classList.add("scroll-locked");
