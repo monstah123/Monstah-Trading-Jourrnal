@@ -18,7 +18,18 @@ export default function AICoachPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast("Copied to clipboard! 📋", "success");
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -212,8 +223,26 @@ export default function AICoachPage() {
                   marginBottom: "12px",
                   maxWidth: msg.role === "user" ? "70%" : "100%",
                   marginLeft: msg.role === "user" ? "auto" : "0",
+                  position: "relative",
                 }}
               >
+                <button
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => copyToClipboard(msg.content)}
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    right: "8px",
+                    padding: "2px 6px",
+                    fontSize: "0.6rem",
+                    opacity: 0.5,
+                    zIndex: 10,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+                >
+                  📋 Copy
+                </button>
                 {msg.role === "assistant" ? (
                   <div
                     dangerouslySetInnerHTML={{
@@ -277,6 +306,11 @@ export default function AICoachPage() {
             </button>
           </div>
         </div>
+        {toast && (
+          <div className={`toast ${toast.type}`}>
+            {toast.type === "success" ? "✅" : "❌"} {toast.message}
+          </div>
+        )}
       </main>
     </div>
   );

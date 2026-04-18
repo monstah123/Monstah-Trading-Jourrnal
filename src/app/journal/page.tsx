@@ -43,6 +43,11 @@ export default function JournalPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast("Copied to clipboard! 📋", "success");
+  };
+
   const [form, setForm] = useState({
     date: "",
     preMarketNotes: "",
@@ -477,8 +482,30 @@ export default function JournalPage() {
                         style={{
                           borderTop: "1px solid var(--border-primary)",
                           paddingTop: "16px",
+                          position: "relative",
                         }}
                       >
+                        <button 
+                          className="btn btn-secondary btn-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const allText = [
+                              entry.preMarketNotes ? `PRE-MARKET:\n${entry.preMarketNotes}` : "",
+                              entry.postMarketNotes ? `POST-MARKET:\n${entry.postMarketNotes}` : "",
+                              entry.lessonsLearned ? `LESSONS:\n${entry.lessonsLearned}` : "",
+                              entry.goalsForTomorrow ? `GOALS:\n${entry.goalsForTomorrow}` : ""
+                            ].filter(Boolean).join("\n\n");
+                            copyToClipboard(allText);
+                          }}
+                          style={{
+                            position: "absolute",
+                            top: "8px",
+                            right: "0",
+                            zIndex: 10,
+                          }}
+                        >
+                          📋 Copy All
+                        </button>
                         <div
                           className="grid-2"
                           style={{ marginBottom: "16px" }}
@@ -486,10 +513,20 @@ export default function JournalPage() {
                           {entry.preMarketNotes && (
                             <div>
                               <div
-                                className="form-label"
+                                className="flex justify-between items-center"
                                 style={{ marginBottom: "4px" }}
                               >
-                                Pre-Market
+                                <label className="form-label" style={{ marginBottom: 0 }}>Pre-Market</label>
+                                <button 
+                                  className="btn btn-ghost btn-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyToClipboard(entry.preMarketNotes);
+                                  }}
+                                  style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                >
+                                  📋 Copy
+                                </button>
                               </div>
                               <div
                                 style={{
@@ -506,10 +543,20 @@ export default function JournalPage() {
                           {entry.postMarketNotes && (
                             <div>
                               <div
-                                className="form-label"
+                                className="flex justify-between items-center"
                                 style={{ marginBottom: "4px" }}
                               >
-                                Post-Market
+                                <label className="form-label" style={{ marginBottom: 0 }}>Post-Market</label>
+                                <button 
+                                  className="btn btn-ghost btn-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyToClipboard(entry.postMarketNotes);
+                                  }}
+                                  style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                >
+                                  📋 Copy
+                                </button>
                               </div>
                               <div
                                 style={{
@@ -527,10 +574,20 @@ export default function JournalPage() {
                         {entry.lessonsLearned && (
                           <div style={{ marginBottom: "12px" }}>
                             <div
-                              className="form-label"
+                              className="flex justify-between items-center"
                               style={{ marginBottom: "4px" }}
                             >
-                              💡 Lessons
+                              <label className="form-label" style={{ marginBottom: 0 }}>💡 Lessons</label>
+                              <button 
+                                className="btn btn-ghost btn-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(entry.lessonsLearned);
+                                }}
+                                style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                              >
+                                📋 Copy
+                              </button>
                             </div>
                             <div
                               style={{
@@ -546,10 +603,20 @@ export default function JournalPage() {
                         {entry.goalsForTomorrow && (
                           <div style={{ marginBottom: "12px" }}>
                             <div
-                              className="form-label"
+                              className="flex justify-between items-center"
                               style={{ marginBottom: "4px" }}
                             >
-                              🎯 Goals
+                              <label className="form-label" style={{ marginBottom: 0 }}>🎯 Goals</label>
+                              <button 
+                                className="btn btn-ghost btn-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(entry.goalsForTomorrow);
+                                }}
+                                style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                              >
+                                📋 Copy
+                              </button>
                             </div>
                             <div
                               style={{
