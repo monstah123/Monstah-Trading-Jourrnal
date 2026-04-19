@@ -34,6 +34,7 @@ export default function LiveChartPage() {
   });
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
   const [isChartLoading, setIsChartLoading] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
@@ -57,10 +58,18 @@ export default function LiveChartPage() {
   }, [user]);
 
   const handleSymbolChange = (symbol: string) => {
-    if (symbol === selectedSymbol) return;
+    setSelectedProjectId(null);
     setIsChartLoading(true);
     setSelectedSymbol(symbol);
     localStorage.setItem("last-selected-symbol", symbol);
+    setTimeout(() => setIsChartLoading(false), 1500);
+  };
+
+  const handleProjectOpen = (project: ChartProject) => {
+    setIsChartLoading(true);
+    setSelectedSymbol(project.symbol);
+    setSelectedProjectId(project.id);
+    localStorage.setItem("last-selected-symbol", project.symbol);
     setTimeout(() => setIsChartLoading(false), 1500);
   };
 
@@ -304,11 +313,11 @@ export default function LiveChartPage() {
                   projects.map(p => (
                     <div 
                       key={p.id} 
-                      className={`badge ${selectedSymbol === p.symbol ? 'badge-primary' : 'badge-secondary'}`}
-                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '4px 10px' }}
-                      onClick={() => handleSymbolChange(p.symbol)}
+                      className={`badge ${selectedProjectId === p.id ? 'badge-primary' : 'badge-secondary'}`}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '4px 10px', border: selectedProjectId === p.id ? '1px solid var(--accent-primary)' : '1px solid transparent' }}
+                      onClick={() => handleProjectOpen(p)}
                     >
-                      <span>{p.name} ({p.symbol})</span>
+                      <span>📁 {p.name} ({p.symbol})</span>
                       <button 
                         type="button" 
                         onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
@@ -345,7 +354,7 @@ export default function LiveChartPage() {
                  </div>
                )}
                <AdvancedRealTimeChart
-                key={`monstah-chart-${selectedSymbol}`}
+                key={`monstah-chart-${selectedProjectId || selectedSymbol}`}
                 theme="dark"
                 symbol={selectedSymbol}
                 interval="60"
