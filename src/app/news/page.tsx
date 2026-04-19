@@ -17,9 +17,8 @@ const STREAMS = [
     label: "📺 Schwab Network",
     description: "Live markets, expert analysis, 24/7",
     color: "#0074D9",
-    // Schwab Network official YouTube channel live stream
-    embedUrl: "https://www.youtube.com/embed/live_stream?channel=UCQdAgF0bQ3WY_UFcELp8rOQ&autoplay=1&mute=1",
-    fallbackUrl: "https://www.youtube.com/@SchwabNetwork/streams",
+    embedUrl: "https://www.youtube.com/embed/8BNuc5DYG0M?si=mXilipPA94If854b&autoplay=1&mute=1",
+    fallbackUrl: "https://www.youtube.com/watch?v=8BNuc5DYG0M",
     type: "youtube",
   },
   {
