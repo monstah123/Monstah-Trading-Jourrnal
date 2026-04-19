@@ -70,6 +70,7 @@ export default function LiveChartPage() {
     setSelectedSymbol(project.symbol);
     setSelectedProjectId(project.id);
     localStorage.setItem("last-selected-symbol", project.symbol);
+    // Use symbol-based key so TradingView restores drawings for this symbol
     setTimeout(() => setIsChartLoading(false), 1500);
   };
 
@@ -354,7 +355,7 @@ export default function LiveChartPage() {
                  </div>
                )}
                <AdvancedRealTimeChart
-                key={`monstah-chart-${selectedProjectId || selectedSymbol}`}
+                key={`monstah-chart-${selectedSymbol}`}
                 theme="dark"
                 symbol={selectedSymbol}
                 interval="60"
