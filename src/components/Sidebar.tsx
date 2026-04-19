@@ -18,6 +18,7 @@ const navItems = [
 
 const secondaryItems = [
   { label: "Live Chart", href: "/chart", icon: "💹" },
+  { label: "News", href: "/news", icon: "📡" },
   { label: "AI Coach", href: "/ai-coach", icon: "🤖" },
   { label: "Settings", href: "/settings", icon: "⚙️" },
 ];
