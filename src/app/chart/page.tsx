@@ -362,19 +362,26 @@ export default function LiveChartPage() {
           <div className="flex gap-16 items-center" style={{ flexWrap: "wrap" }}>
             <span className="card-title">📈 Live Chart</span>
 
-            <div className="chart-layout-switch" title="Multi-chart layout">
-              {CHART_LAYOUTS.map((count) => (
-                <button
-                  key={count}
-                  type="button"
-                  className={`btn btn-ghost ${layout === count ? "active" : ""}`}
-                  onClick={() => changeLayout(count)}
-                  aria-pressed={layout === count}
-                  title={LAYOUT_LABELS[count]}
-                >
-                  {count}
-                </button>
-              ))}
+            <div className="chart-layout-picker">
+              <span className="chart-layout-label">Charts:</span>
+              <div
+                className="chart-layout-switch"
+                role="group"
+                aria-label="Chart layout"
+              >
+                {CHART_LAYOUTS.map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    className={`btn btn-ghost ${layout === count ? "active" : ""}`}
+                    onClick={() => changeLayout(count)}
+                    aria-pressed={layout === count}
+                    title={LAYOUT_LABELS[count]}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <form onSubmit={addToWatchlist} className="flex gap-2 items-center">

@@ -962,6 +962,21 @@ body.scroll-locked {
   flex-shrink: 0;
 }
 
+.chart-layout-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-layout-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .chart-layout-switch {
   display: inline-flex;
   align-items: center;
