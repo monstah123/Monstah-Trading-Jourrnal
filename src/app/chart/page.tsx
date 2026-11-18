@@ -235,6 +235,8 @@ export default function LiveChartPage() {
     let cancelled = false;
 
     const loadQuotes = async () => {
+      // Skip network work while the tab is in the background
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const response = await fetch(
           `/api/quotes?symbols=${encodeURIComponent(watchlist.join(","))}`,
@@ -249,11 +251,16 @@ export default function LiveChartPage() {
     };
 
     loadQuotes();
-    const interval = setInterval(loadQuotes, 30_000);
+    const interval = setInterval(loadQuotes, 5_000);
+    const handleVisibility = () => {
+      if (!document.hidden) loadQuotes();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [watchlist]);
 
@@ -887,7 +894,7 @@ export default function LiveChartPage() {
                   </div>
 
                   <div className="watchlist-footer">
-                    Prices refreshed every 30s · click a row to load it
+                    Prices refresh every 5s · click a row to load it
                   </div>
                 </aside>
               )}

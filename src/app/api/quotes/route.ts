@@ -7,7 +7,7 @@ interface Quote {
   currency: string | null;
 }
 
-const CACHE_TTL_MS = 20_000;
+const CACHE_TTL_MS = 4_000;
 const cache = new Map<string, { quote: Quote; expires: number }>();
 
 // Yahoo Finance has no spot metals/energy symbols, so map to their futures.
