@@ -46,6 +46,48 @@ const LAYOUT_LABELS: Record<ChartLayout, string> = {
   4: "Four chart grid",
 };
 
+interface WatchlistQuote {
+  price: number | null;
+  change: number | null;
+  changePercent: number | null;
+  currency: string | null;
+}
+
+function splitChartSymbol(symbol: string): { exchange: string; ticker: string } {
+  const [exchange, ...rest] = symbol.split(":");
+  if (rest.length === 0) return { exchange: "—", ticker: symbol };
+  return { exchange, ticker: rest.join(":") };
+}
+
+function formatQuotePrice(price: number | null | undefined): string {
+  if (price === null || price === undefined || !Number.isFinite(price)) return "—";
+  if (price >= 1000) {
+    return price.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  }
+  if (price >= 1) {
+    return price.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+  return price.toLocaleString("en-US", {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 5,
+  });
+}
+
+function formatQuoteChange(changePercent: number | null | undefined): string {
+  if (
+    changePercent === null ||
+    changePercent === undefined ||
+    !Number.isFinite(changePercent)
+  ) {
+    return "—";
+  }
+  const sign = changePercent > 0 ? "+" : "";
+  return `${sign}${changePercent.toFixed(2)}%`;
+}
+
 function PaneSymbolInput({
   value,
   onCommit,
@@ -106,6 +148,10 @@ export default function LiveChartPage() {
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Right-side watchlist panel state
+  const [showWatchlist, setShowWatchlist] = useState(true);
+  const [quotes, setQuotes] = useState<Record<string, WatchlistQuote | null>>({});
 
   // Multi-chart workspace state
   const [layout, setLayout] = useState<ChartLayout>(1);
@@ -178,6 +224,38 @@ export default function LiveChartPage() {
       if (loadingTimer.current) clearTimeout(loadingTimer.current);
     };
   }, []);
+
+  // Poll live quotes for the watchlist panel
+  useEffect(() => {
+    if (!watchlist.length) {
+      setQuotes({});
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadQuotes = async () => {
+      try {
+        const response = await fetch(
+          `/api/quotes?symbols=${encodeURIComponent(watchlist.join(","))}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled) setQuotes(data.quotes ?? {});
+      } catch (error) {
+        if (!cancelled) console.error("Failed to load quotes:", error);
+      }
+    };
+
+    loadQuotes();
+    const interval = setInterval(loadQuotes, 30_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [watchlist]);
 
   const visiblePanes = panes.slice(0, layout);
   const activePane = visiblePanes.find((pane) => pane.id === activePaneId) ?? visiblePanes[0];
@@ -488,14 +566,25 @@ export default function LiveChartPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={toggleFullscreen}
-            title={chartFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen"}
-          >
-            {chartFullscreen ? "↙ Exit Fullscreen" : "⛶ Fullscreen"}
-          </button>
+          <div className="flex gap-8 items-center">
+            <button
+              type="button"
+              className={`btn btn-ghost btn-sm ${showWatchlist ? "active" : ""}`}
+              onClick={() => setShowWatchlist((visible) => !visible)}
+              title={showWatchlist ? "Hide watchlist panel" : "Show watchlist panel"}
+              aria-pressed={showWatchlist}
+            >
+              📋 {showWatchlist ? "Hide Watchlist" : "Watchlist"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={toggleFullscreen}
+              title={chartFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen"}
+            >
+              {chartFullscreen ? "↙ Exit Fullscreen" : "⛶ Fullscreen"}
+            </button>
+          </div>
         </div>
 
         {toast && (
@@ -625,8 +714,9 @@ export default function LiveChartPage() {
               </div>
             </div>
 
-            <div className={`chart-grid chart-grid-${layout}`}>
-              {visiblePanes.map((pane, index) => {
+            <div className="chart-body">
+              <div className={`chart-grid chart-grid-${layout}`}>
+                {visiblePanes.map((pane, index) => {
                 const isActive = activePane?.id === pane.id;
                 const isCompact = layout > 1;
                 return (
@@ -687,7 +777,6 @@ export default function LiveChartPage() {
                         details={!isCompact}
                         hotlist={!isCompact}
                         calendar={!isCompact}
-                        watchlist={isCompact ? undefined : watchlist}
                         show_popup_button={!isCompact}
                         // @ts-ignore
                         countdown={true}
@@ -704,6 +793,104 @@ export default function LiveChartPage() {
                   </div>
                 );
               })}
+              </div>
+
+              {showWatchlist && (
+                <aside className="chart-watchlist" aria-label="Watchlist">
+                  <div className="watchlist-header">
+                    <span className="watchlist-title">★ Watchlist</span>
+                    <span className="watchlist-count">{watchlist.length}</span>
+                    <button
+                      type="button"
+                      className="watchlist-close"
+                      onClick={() => setShowWatchlist(false)}
+                      title="Hide watchlist"
+                      aria-label="Hide watchlist"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <form className="watchlist-add" onSubmit={addToWatchlist}>
+                    <input
+                      className="watchlist-add-input"
+                      placeholder="Add symbol..."
+                      value={newSymbol}
+                      onChange={(event) => setNewSymbol(event.target.value)}
+                      disabled={isUpdatingWatchlist}
+                      spellCheck={false}
+                      aria-label="Add symbol to watchlist"
+                    />
+                    <button
+                      type="submit"
+                      className="watchlist-add-btn"
+                      disabled={isUpdatingWatchlist}
+                      title="Add to watchlist"
+                    >
+                      +
+                    </button>
+                  </form>
+
+                  <div className="watchlist-list">
+                    {watchlist.length === 0 ? (
+                      <p className="watchlist-empty">
+                        No symbols yet. Add one above or click a project.
+                      </p>
+                    ) : (
+                      watchlist.map((symbol) => {
+                        const { exchange, ticker } = splitChartSymbol(symbol);
+                        const quote = quotes[symbol];
+                        const changePercent = quote?.changePercent ?? null;
+                        const changeClass =
+                          changePercent === null
+                            ? ""
+                            : changePercent >= 0
+                              ? "up"
+                              : "down";
+                        return (
+                          <div
+                            key={symbol}
+                            className={`watchlist-row ${
+                              selectedSymbol === symbol ? "active" : ""
+                            }`}
+                            onClick={() => assignSymbol(symbol)}
+                            title={`Open ${symbol} in chart ${activeChartNumber}`}
+                          >
+                            <div className="watchlist-ident">
+                              <span className="watchlist-ticker">{ticker}</span>
+                              <span className="watchlist-exchange">{exchange}</span>
+                            </div>
+                            <div className="watchlist-quote">
+                              <span className="watchlist-price">
+                                {formatQuotePrice(quote?.price)}
+                              </span>
+                              <span className={`watchlist-change ${changeClass}`}>
+                                {formatQuoteChange(changePercent)}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="watchlist-remove"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                removeFromWatchlist(symbol);
+                              }}
+                              title={`Remove ${symbol}`}
+                              aria-label={`Remove ${symbol} from watchlist`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="watchlist-footer">
+                    Prices refreshed every 30s · click a row to load it
+                  </div>
+                </aside>
+              )}
             </div>
           </div>
         </div>

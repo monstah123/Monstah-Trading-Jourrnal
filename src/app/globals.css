@@ -945,6 +945,7 @@ body.scroll-locked {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  position: relative;
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   background: var(--bg-card);
@@ -1002,12 +1003,20 @@ body.scroll-locked {
   box-shadow: 0 2px 8px var(--accent-primary-glow);
 }
 
+.chart-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+}
+
 .chart-grid {
   flex: 1;
   display: grid;
   gap: 6px;
   padding: 6px;
   min-height: 0;
+  min-width: 0;
 }
 
 .chart-grid-1 {
@@ -1149,6 +1158,268 @@ body.scroll-locked {
   background: var(--bg-card);
   color: var(--text-muted);
   font-size: 0.75rem;
+}
+
+/* ========== WATCHLIST PANEL ========== */
+.chart-watchlist {
+  width: 272px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+}
+
+.watchlist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-primary);
+  flex-shrink: 0;
+}
+
+.watchlist-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.watchlist-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.watchlist-close {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.watchlist-close:hover {
+  color: var(--text-primary);
+}
+
+.watchlist-add {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-primary);
+  flex-shrink: 0;
+}
+
+.watchlist-add-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 4px 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  outline: none;
+}
+
+.watchlist-add-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.watchlist-add-input::placeholder {
+  color: var(--text-muted);
+}
+
+.watchlist-add-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: var(--accent-gradient);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.watchlist-add-btn:hover {
+  opacity: 0.85;
+}
+
+.watchlist-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.watchlist-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.watchlist-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.watchlist-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.watchlist-row.active {
+  background: rgba(108, 92, 231, 0.08);
+  border-left-color: var(--accent-primary);
+}
+
+.watchlist-ident {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.watchlist-ticker {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.watchlist-exchange {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.watchlist-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.watchlist-price {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.watchlist-change {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.watchlist-change.up {
+  color: var(--profit);
+}
+
+.watchlist-change.down {
+  color: var(--loss);
+}
+
+.watchlist-remove {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.watchlist-row:hover .watchlist-remove,
+.watchlist-remove:focus-visible {
+  opacity: 1;
+}
+
+.watchlist-remove:hover {
+  color: var(--loss);
+  background: var(--loss-bg);
+}
+
+.watchlist-empty {
+  padding: 20px 14px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.watchlist-footer {
+  padding: 6px 10px;
+  border-top: 1px solid var(--border-primary);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.card-header .btn-ghost.active {
+  background: var(--accent-primary-glow);
+  color: var(--accent-primary);
+}
+
+@media (max-width: 1100px) {
+  .chart-watchlist {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(300px, 88vw);
+    z-index: 30;
+    border-left: 1px solid var(--border-secondary);
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  }
 }
 
 .chart-workspace:fullscreen {
