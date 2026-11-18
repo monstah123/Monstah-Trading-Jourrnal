@@ -5,8 +5,22 @@ import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/components/AuthProvider";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { getWatchlist, saveWatchlist, getChartProjects, saveChartProject, generateId } from "@/lib/storage";
-import { ChartProject } from "@/types/trade";
+import {
+  getWatchlist,
+  saveWatchlist,
+  getChartProjects,
+  saveChartProject,
+  getChartWorkspace,
+  saveChartWorkspace,
+  generateId,
+} from "@/lib/storage";
+import { ChartInterval, ChartLayout, ChartPane, ChartProject } from "@/types/trade";
+import {
+  CHART_LAYOUTS,
+  CHART_TIMEFRAMES,
+  DEFAULT_CHART_PANES,
+  normalizeChartSymbol,
+} from "@/lib/chart";
 
 // Dynamically import TradingView widget to avoid SSR issues
 const AdvancedRealTimeChart = dynamic(
@@ -14,28 +28,94 @@ const AdvancedRealTimeChart = dynamic(
   { ssr: false }
 );
 
+const QUICK_SYMBOLS = [
+  "FX:EURUSD",
+  "FX:GBPUSD",
+  "OANDA:XAUUSD",
+  "BINANCE:BTCUSDT",
+  "BINANCE:ETHUSDT",
+  "AMEX:SPY",
+  "NASDAQ:QQQ",
+  "NASDAQ:TSLA",
+  "NASDAQ:NVDA",
+];
+
+const LAYOUT_LABELS: Record<ChartLayout, string> = {
+  1: "Single chart",
+  2: "Two charts side by side",
+  4: "Four chart grid",
+};
+
+function PaneSymbolInput({
+  value,
+  onCommit,
+}: {
+  value: string;
+  onCommit: (symbol: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const cancelEdit = useRef(false);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  return (
+    <input
+      className="chart-pane-symbol"
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Escape") {
+          cancelEdit.current = true;
+          setDraft(value);
+          event.currentTarget.blur();
+        }
+      }}
+      onBlur={() => {
+        if (cancelEdit.current) {
+          cancelEdit.current = false;
+          setDraft(value);
+          return;
+        }
+        const nextSymbol = normalizeChartSymbol(draft);
+        if (nextSymbol && nextSymbol !== value) onCommit(nextSymbol);
+        else setDraft(value);
+      }}
+      placeholder="EXCHANGE:SYMBOL"
+      spellCheck={false}
+      aria-label="Chart symbol"
+      title="Type a symbol and press Enter (e.g. NASDAQ:AAPL)"
+    />
+  );
+}
+
 export default function LiveChartPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [chartFullscreen, setChartFullscreen] = useState(false);
-  
+
   // Watchlist & Projects state
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [projects, setProjects] = useState<ChartProject[]>([]);
   const [newSymbol, setNewSymbol] = useState("");
   const [projectName, setProjectName] = useState("");
-  const [selectedSymbol, setSelectedSymbol] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("last-selected-symbol") || "ICMARKETS:EURUSD";
-    }
-    return "ICMARKETS:EURUSD";
-  });
   const [isUpdatingWatchlist, setIsUpdatingWatchlist] = useState(false);
-  const [isChartLoading, setIsChartLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Multi-chart workspace state
+  const [layout, setLayout] = useState<ChartLayout>(1);
+  const [panes, setPanes] = useState<ChartPane[]>(() =>
+    DEFAULT_CHART_PANES.map((pane) => ({ ...pane }))
+  );
+  const [activePaneId, setActivePaneId] = useState(DEFAULT_CHART_PANES[0].id);
+  const [loadingPaneId, setLoadingPaneId] = useState<string | null>(null);
+  const workspaceHydrated = useRef(false);
+  const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -44,39 +124,107 @@ export default function LiveChartPage() {
     }
   }, [user, loading, router]);
 
-  // Fetch watchlist & projects from Firestore/LocalStorage on mount
+  // Fetch watchlist, projects and the saved multi-chart workspace
   useEffect(() => {
-    if (user) {
-      getWatchlist(user.uid).then(setWatchlist);
-      getChartProjects(user.uid).then(setProjects);
-      
-      const savedSymbol = localStorage.getItem("last-selected-symbol");
-      if (savedSymbol) {
-        setSelectedSymbol(savedSymbol);
+    if (!user) return;
+    let cancelled = false;
+    workspaceHydrated.current = false;
+
+    (async () => {
+      const [savedWatchlist, savedProjects, workspace] = await Promise.all([
+        getWatchlist(user.uid),
+        getChartProjects(user.uid),
+        getChartWorkspace(user.uid),
+      ]);
+      if (cancelled) return;
+
+      setWatchlist(savedWatchlist);
+      setProjects(savedProjects);
+
+      if (workspace) {
+        setLayout(workspace.layout);
+        setPanes(workspace.panes);
+        setActivePaneId(workspace.activePaneId);
+      } else {
+        // Migrate the previous single-chart selection into pane 1
+        const savedSymbol = localStorage.getItem("last-selected-symbol");
+        if (savedSymbol) {
+          setPanes((previous) =>
+            previous.map((pane, index) =>
+              index === 0 ? { ...pane, symbol: savedSymbol } : pane
+            )
+          );
+        }
       }
-    }
+
+      workspaceHydrated.current = true;
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
-  const handleSymbolChange = (symbol: string) => {
-    setSelectedProjectId(null);
-    setIsChartLoading(true);
-    setSelectedSymbol(symbol);
+  // Persist layout, pane symbols and timeframes
+  useEffect(() => {
+    if (!user || !workspaceHydrated.current) return;
+    saveChartWorkspace(user.uid, { layout, panes, activePaneId }).catch((error) =>
+      console.error("Failed to save chart workspace:", error)
+    );
+  }, [user, layout, panes, activePaneId]);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    };
+  }, []);
+
+  const visiblePanes = panes.slice(0, layout);
+  const activePane = visiblePanes.find((pane) => pane.id === activePaneId) ?? visiblePanes[0];
+  const selectedSymbol = activePane?.symbol ?? DEFAULT_CHART_PANES[0].symbol;
+
+  const showPaneLoading = (paneId: string) => {
+    setLoadingPaneId(paneId);
+    if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    loadingTimer.current = setTimeout(() => setLoadingPaneId(null), 1200);
+  };
+
+  const updatePane = (paneId: string, updates: Partial<ChartPane>) => {
+    setPanes((previous) =>
+      previous.map((pane) => (pane.id === paneId ? { ...pane, ...updates } : pane))
+    );
+  };
+
+  const assignSymbol = (
+    rawSymbol: string,
+    projectId: string | null = null,
+    paneId = activePane?.id ?? panes[0].id
+  ) => {
+    const symbol = normalizeChartSymbol(rawSymbol);
+    if (!symbol) return;
+
+    updatePane(paneId, { symbol });
     localStorage.setItem("last-selected-symbol", symbol);
-    setTimeout(() => setIsChartLoading(false), 1500);
+    setSelectedProjectId(projectId);
+    showPaneLoading(paneId);
+  };
+
+  const changeLayout = (nextLayout: ChartLayout) => {
+    setLayout(nextLayout);
+    if (!panes.slice(0, nextLayout).some((pane) => pane.id === activePaneId)) {
+      setActivePaneId(panes[0].id);
+    }
+    // Let TradingView widgets recalculate their size after the grid changes
+    setTimeout(() => window.dispatchEvent(new Event("resize")), 80);
   };
 
   const handleProjectOpen = (project: ChartProject) => {
-    setIsChartLoading(true);
-    setSelectedSymbol(project.symbol);
-    setSelectedProjectId(project.id);
-    localStorage.setItem("last-selected-symbol", project.symbol);
-    // Use symbol-based key so TradingView restores drawings for this symbol
-    setTimeout(() => setIsChartLoading(false), 1500);
+    assignSymbol(project.symbol, project.id);
   };
 
   const createProject = async () => {
     if (!projectName.trim() || !user) return;
-    
+
     const newProject: ChartProject = {
       id: generateId(),
       name: projectName.trim(),
@@ -99,10 +247,11 @@ export default function LiveChartPage() {
 
   const deleteProject = async (id: string) => {
     if (!user) return;
-    const updated = projects.filter(p => p.id !== id);
+    const updated = projects.filter((p) => p.id !== id);
     try {
       await saveChartProject(user.uid, updated);
       setProjects(updated);
+      if (selectedProjectId === id) setSelectedProjectId(null);
     } catch (err) {
       console.error("Delete failed:", err);
     }
@@ -136,7 +285,11 @@ export default function LiveChartPage() {
       if (document.fullscreenElement) {
         document.exitFullscreen();
       } else {
-        chartEl.requestFullscreen().catch(err => console.error("Error attempting to enable full-screen mode:", err.message));
+        chartEl
+          .requestFullscreen()
+          .catch((err) =>
+            console.error("Error attempting to enable full-screen mode:", err.message)
+          );
       }
     }
   };
@@ -144,14 +297,13 @@ export default function LiveChartPage() {
   const addToWatchlist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSymbol.trim() || !user) return;
-    
+
     setIsUpdatingWatchlist(true);
-    let sym = newSymbol.trim().toUpperCase();
-    
-    // Auto-prefix common pairs if missing
-    if (!sym.includes(":")) {
-      if (sym.length === 6) sym = `FX:${sym}`;
-      else if (["BTCUSD", "ETHUSD", "SOLUSD"].includes(sym)) sym = `BINANCE:${sym}`;
+    const sym = normalizeChartSymbol(newSymbol);
+    if (!sym) {
+      setNewSymbol("");
+      setIsUpdatingWatchlist(false);
+      return;
     }
 
     if (watchlist.includes(sym)) {
@@ -180,7 +332,7 @@ export default function LiveChartPage() {
   const removeFromWatchlist = async (symbol: string) => {
     if (!user) return;
     setIsUpdatingWatchlist(true);
-    const updated = watchlist.filter(s => s !== symbol);
+    const updated = watchlist.filter((s) => s !== symbol);
     try {
       await saveWatchlist(user.uid, updated);
       setWatchlist(updated);
@@ -191,91 +343,147 @@ export default function LiveChartPage() {
     }
   };
 
+  const activeChartNumber = visiblePanes.findIndex((pane) => pane.id === activePane?.id) + 1;
+
   return (
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="flex gap-16 items-center">
+        <div
+          className="card-header"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div className="flex gap-16 items-center" style={{ flexWrap: "wrap" }}>
             <span className="card-title">📈 Live Chart</span>
+
+            <div className="chart-layout-switch" title="Multi-chart layout">
+              {CHART_LAYOUTS.map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  className={`btn btn-ghost ${layout === count ? "active" : ""}`}
+                  onClick={() => changeLayout(count)}
+                  aria-pressed={layout === count}
+                  title={LAYOUT_LABELS[count]}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+
             <form onSubmit={addToWatchlist} className="flex gap-2 items-center">
               <input
                 className="form-input"
-                style={{ width: '100px', padding: '4px 8px', fontSize: '0.7rem', height: '28px', borderRadius: '4px' }}
+                style={{
+                  width: "100px",
+                  padding: "4px 8px",
+                  fontSize: "0.7rem",
+                  height: "28px",
+                  borderRadius: "4px",
+                }}
                 placeholder="Symbol..."
                 value={newSymbol}
                 onChange={(e) => setNewSymbol(e.target.value)}
                 disabled={isUpdatingWatchlist}
               />
-              <button 
-                type="submit" 
-                className="btn btn-primary" 
-                style={{ 
-                  width: '28px', 
-                  height: '28px', 
-                  padding: 0, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  fontSize: '1.1rem',
-                  borderRadius: '4px'
-                }} 
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.1rem",
+                  borderRadius: "4px",
+                }}
                 disabled={isUpdatingWatchlist}
                 title="Add to Watchlist"
               >
                 +
               </button>
             </form>
-            <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap', maxWidth: '400px' }}>
-               {[
-                  "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
-                  "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
-                ].map(s => (
-                  <span 
-                    key={s} 
-                    className={`badge badge-secondary ${selectedSymbol === s ? 'active' : ''}`}
-                    style={{ 
-                      fontSize: '0.6rem', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px',
-                      cursor: 'pointer',
-                      border: selectedSymbol === s ? '1px solid var(--accent-primary)' : '1px solid transparent',
-                      opacity: watchlist.includes(s) || [
-                        "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
-                        "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
-                      ].includes(s) ? 1 : 0.6
+
+            <div
+              className="flex gap-4 items-center"
+              style={{ flexWrap: "wrap", maxWidth: "400px" }}
+            >
+              {QUICK_SYMBOLS.map((s) => (
+                <span
+                  key={s}
+                  className={`badge badge-secondary ${selectedSymbol === s ? "active" : ""}`}
+                  style={{
+                    fontSize: "0.6rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    cursor: "pointer",
+                    border:
+                      selectedSymbol === s
+                        ? "1px solid var(--accent-primary)"
+                        : "1px solid transparent",
+                  }}
+                  onClick={() => assignSymbol(s)}
+                  title={`Open ${s} in chart ${activeChartNumber}`}
+                >
+                  {s}
+                </span>
+              ))}
+              {watchlist
+                .filter((s) => !QUICK_SYMBOLS.includes(s))
+                .map((s) => (
+                  <span
+                    key={s}
+                    className={`badge badge-secondary ${selectedSymbol === s ? "active" : ""}`}
+                    style={{
+                      fontSize: "0.6rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      cursor: "pointer",
+                      border:
+                        selectedSymbol === s
+                          ? "1px solid var(--accent-primary)"
+                          : "1px solid transparent",
                     }}
-                    onClick={() => handleSymbolChange(s)}
+                    onClick={() => assignSymbol(s)}
+                    title={`Open ${s} in chart ${activeChartNumber}`}
                   >
-                    {s}
-                  </span>
-                ))}
-                {watchlist.filter(s => ![
-                  "FX:EURUSD", "FX:GBPUSD", "OANDA:XAUUSD", "BINANCE:BTCUSDT", 
-                  "BINANCE:ETHUSDT", "AMEX:SPY", "NASDAQ:QQQ", "NASDAQ:TSLA", "NASDAQ:NVDA"
-                ].includes(s)).map(s => (
-                  <span 
-                    key={s} 
-                    className={`badge badge-secondary ${selectedSymbol === s ? 'active' : ''}`} 
-                    style={{ 
-                      fontSize: '0.6rem', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px',
-                      cursor: 'pointer',
-                      border: selectedSymbol === s ? '1px solid var(--accent-primary)' : '1px solid transparent'
-                    }}
-                    onClick={() => handleSymbolChange(s)}
-                  >
-                    {s} <button type="button" onClick={(e) => { e.stopPropagation(); removeFromWatchlist(s); }} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
+                    {s}{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromWatchlist(s);
+                      }}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "rgba(255,255,255,0.6)",
+                        cursor: "pointer",
+                        padding: 0,
+                        fontSize: "0.9rem",
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
             </div>
           </div>
-          <button 
-            type="button" 
-            className="btn btn-ghost btn-sm" 
+
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
             onClick={toggleFullscreen}
             title={chartFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen"}
           >
@@ -284,45 +492,101 @@ export default function LiveChartPage() {
         </div>
 
         {toast && (
-          <div 
-            style={{ 
-              position: 'fixed', 
-              top: '20px', 
-              right: '20px', 
-              padding: '12px 24px', 
-              background: toast.type === 'success' ? 'var(--profit)' : 'var(--loss)', 
-              color: 'white', 
-              borderRadius: '8px', 
+          <div
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              padding: "12px 24px",
+              background: toast.type === "success" ? "var(--profit)" : "var(--loss)",
+              color: "white",
+              borderRadius: "8px",
               zIndex: 1000,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
               fontWeight: 600,
-              animation: 'slideIn 0.3s ease-out'
+              animation: "slideIn 0.3s ease-out",
             }}
           >
             {toast.message}
           </div>
         )}
 
-        <div className="page-body" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}>
-          <div id="live-chart-container" ref={chartContainerRef} className="card" style={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", border: "1px solid var(--border-primary)", borderRadius: "12px", background: "#13131d", touchAction: "none" }}>
-            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <div className="flex gap-8 items-center" style={{ flex: 1, overflowX: 'auto', paddingBottom: '4px' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>📁 Projects:</span>
+        <div
+          className="page-body"
+          style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: "calc(100vh - 120px)" }}
+        >
+          <div
+            id="live-chart-container"
+            ref={chartContainerRef}
+            className="chart-workspace"
+          >
+            <div className="chart-workspace-toolbar">
+              <div
+                className="flex gap-8 items-center"
+                style={{ flex: 1, overflowX: "auto", paddingBottom: "4px" }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    color: "var(--text-muted)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  📁 Projects:
+                </span>
                 {projects.length === 0 ? (
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No saved projects yet</span>
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-muted)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No saved projects yet
+                  </span>
                 ) : (
-                  projects.map(p => (
-                    <div 
-                      key={p.id} 
-                      className={`badge ${selectedProjectId === p.id ? 'badge-primary' : 'badge-secondary'}`}
-                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '4px 10px', border: selectedProjectId === p.id ? '1px solid var(--accent-primary)' : '1px solid transparent' }}
+                  projects.map((p) => (
+                    <div
+                      key={p.id}
+                      className={`badge ${
+                        selectedProjectId === p.id ? "badge-primary" : "badge-secondary"
+                      }`}
+                      style={{
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "0.7rem",
+                        padding: "4px 10px",
+                        border:
+                          selectedProjectId === p.id
+                            ? "1px solid var(--accent-primary)"
+                            : "1px solid transparent",
+                      }}
                       onClick={() => handleProjectOpen(p)}
+                      title={`Open ${p.symbol} in chart ${activeChartNumber}`}
                     >
-                      <span>📁 {p.name} ({p.symbol})</span>
-                      <button 
-                        type="button" 
-                        onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
-                        style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', padding: 0, cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}
+                      <span>
+                        📁 {p.name} ({p.symbol})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteProject(p.id);
+                        }}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          color: "rgba(255,255,255,0.4)",
+                          padding: 0,
+                          cursor: "pointer",
+                          fontSize: "1rem",
+                          lineHeight: 1,
+                        }}
                       >
                         ×
                       </button>
@@ -333,51 +597,107 @@ export default function LiveChartPage() {
               <div className="flex gap-8 items-center">
                 <input
                   className="form-input"
-                  style={{ width: '160px', padding: '4px 8px', fontSize: '0.7rem', height: '28px', borderRadius: '4px' }}
+                  style={{
+                    width: "160px",
+                    padding: "4px 8px",
+                    fontSize: "0.7rem",
+                    height: "28px",
+                    borderRadius: "4px",
+                  }}
                   placeholder="Project name..."
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                 />
-                <button 
+                <button
                   className="btn btn-primary btn-sm"
                   onClick={createProject}
-                  style={{ height: '28px', fontSize: '0.7rem' }}
+                  style={{ height: "28px", fontSize: "0.7rem" }}
                 >
                   💾 Save Project
                 </button>
               </div>
             </div>
-             <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
-               {isChartLoading && (
-                 <div style={{ position: 'absolute', inset: 0, background: '#13131d', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
-                   <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Loading {selectedSymbol}...</span>
-                 </div>
-               )}
-               <AdvancedRealTimeChart
-                key={`monstah-chart-${selectedSymbol}`}
-                theme="dark"
-                symbol={selectedSymbol}
-                interval="60"
-                timezone="Etc/UTC"
-                style="1"
-                locale="en"
-                enable_publishing={false}
-                hide_side_toolbar={false}
-                allow_symbol_change={true}
-                withdateranges={true}
-                save_image={true}
-                details={true}
-                hotlist={true}
-                calendar={true}
-                watchlist={watchlist}
-                show_popup_button={true}
-                // @ts-ignore
-                countdown={true}
-                container_id="monstah_tradingview_chart"
-                autosize
-              />
-             </div>
+
+            <div className={`chart-grid chart-grid-${layout}`}>
+              {visiblePanes.map((pane, index) => {
+                const isActive = activePane?.id === pane.id;
+                const isCompact = layout > 1;
+                return (
+                  <div
+                    key={pane.id}
+                    className={`chart-pane ${isActive ? "active" : ""}`}
+                    onMouseDown={() => setActivePaneId(pane.id)}
+                    onMouseEnter={() => setActivePaneId(pane.id)}
+                  >
+                    <div className="chart-pane-header">
+                      <span
+                        className="chart-pane-index"
+                        title={isActive ? `Chart ${index + 1} (active)` : `Click to activate chart ${index + 1}`}
+                      >
+                        {index + 1}
+                      </span>
+                      <PaneSymbolInput
+                        value={pane.symbol}
+                        onCommit={(symbol) => assignSymbol(symbol, null, pane.id)}
+                      />
+                      <select
+                        className="chart-pane-timeframe"
+                        value={pane.interval}
+                        onChange={(e) =>
+                          updatePane(pane.id, { interval: e.target.value as ChartInterval })
+                        }
+                        title="Chart timeframe"
+                        aria-label={`Chart ${index + 1} timeframe`}
+                      >
+                        {CHART_TIMEFRAMES.map((timeframe) => (
+                          <option key={timeframe.value} value={timeframe.value}>
+                            {timeframe.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span
+                        className="chart-pane-feed"
+                        title="TradingView feed — real-time for crypto/FX, delayed for some stocks"
+                      >
+                        ●
+                      </span>
+                    </div>
+
+                    <div className="chart-pane-widget">
+                      <AdvancedRealTimeChart
+                        key={`${pane.id}-${pane.symbol}-${pane.interval}-${isCompact ? "compact" : "full"}`}
+                        theme="dark"
+                        symbol={pane.symbol}
+                        interval={pane.interval}
+                        timezone="Etc/UTC"
+                        style="1"
+                        locale="en"
+                        enable_publishing={false}
+                        allow_symbol_change={false}
+                        hide_side_toolbar={isCompact}
+                        withdateranges={!isCompact}
+                        save_image={true}
+                        details={!isCompact}
+                        hotlist={!isCompact}
+                        calendar={!isCompact}
+                        watchlist={isCompact ? undefined : watchlist}
+                        show_popup_button={!isCompact}
+                        // @ts-ignore
+                        countdown={true}
+                        container_id={`monstah_tradingview_chart_${pane.id}`}
+                        autosize
+                      />
+                      {loadingPaneId === pane.id && (
+                        <div className="chart-pane-loading">
+                          <span className="spinner" />
+                          <span>Loading {pane.symbol}...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </main>

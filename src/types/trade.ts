@@ -143,3 +143,30 @@ export interface ChartProject {
   symbol: string;
   createdAt: string;
 }
+
+export type ChartLayout = 1 | 2 | 4;
+
+export type ChartInterval =
+  | "1"
+  | "3"
+  | "5"
+  | "15"
+  | "30"
+  | "60"
+  | "120"
+  | "180"
+  | "240"
+  | "D"
+  | "W";
+
+export interface ChartPane {
+  id: string;
+  symbol: string;
+  interval: ChartInterval;
+}
+
+export interface ChartWorkspace {
+  layout: ChartLayout;
+  panes: ChartPane[];
+  activePaneId: string;
+}

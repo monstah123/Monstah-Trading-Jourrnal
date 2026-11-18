@@ -1,4 +1,5 @@
-import { Trade, JournalEntry, Playbook } from "@/types/trade";
+import { Trade, JournalEntry, Playbook, ChartPane, ChartWorkspace } from "@/types/trade";
+import { DEFAULT_CHART_PANES, isChartInterval } from "@/lib/chart";
 import { db, storage } from "@/lib/firebase";
 import {
   collection,
@@ -210,6 +211,76 @@ export async function saveChartProject(userId: string, projects: any[]): Promise
     localStorage.setItem(`${PROJECTS_KEY}_${userId}`, JSON.stringify(projects));
   } catch (error) {
     console.error("Error saving projects:", error);
+    throw error;
+  }
+}
+
+// Multi-chart workspace (layout + per-pane symbols/timeframes)
+const CHART_WORKSPACE_KEY = "monstah_chart_workspace";
+
+export async function getChartWorkspace(userId: string): Promise<ChartWorkspace | null> {
+  if (typeof window === "undefined" || !userId) return null;
+  try {
+    const saved = localStorage.getItem(`${CHART_WORKSPACE_KEY}_${userId}`);
+    if (!saved) return null;
+
+    const parsed = JSON.parse(saved) as Partial<ChartWorkspace> | null;
+    if (!parsed || !Array.isArray(parsed.panes)) return null;
+
+    const layout = parsed.layout === 2 || parsed.layout === 4 ? parsed.layout : 1;
+    const seenIds = new Set<string>();
+
+    const panes: ChartPane[] = (parsed.panes as Array<Partial<ChartPane> | null>)
+      .filter((pane): pane is Partial<ChartPane> =>
+        !!pane && typeof pane.symbol === "string" && pane.symbol.trim().length > 0
+      )
+      .map((pane, index) => {
+        let id = typeof pane.id === "string" && pane.id ? pane.id : `pane-${index + 1}`;
+        while (seenIds.has(id)) id = `${id}-${index + 1}`;
+        seenIds.add(id);
+
+        return {
+          id,
+          symbol: (pane.symbol as string).trim(),
+          interval: isChartInterval(pane.interval) ? pane.interval : "60",
+        };
+      })
+      .slice(0, DEFAULT_CHART_PANES.length);
+
+    // Keep four pane slots so switching layouts restores previous chart setups
+    while (panes.length < DEFAULT_CHART_PANES.length) {
+      const fallback = DEFAULT_CHART_PANES[panes.length];
+      let id = fallback.id;
+      let suffix = 2;
+      while (panes.some((pane) => pane.id === id)) id = `${fallback.id}-${suffix++}`;
+      panes.push({ ...fallback, id });
+    }
+
+    // The active pane must be one of the currently visible panes
+    const activePaneId =
+      typeof parsed.activePaneId === "string" &&
+      panes
+        .slice(0, layout)
+        .some((pane) => pane.id === parsed.activePaneId)
+        ? parsed.activePaneId
+        : panes[0].id;
+
+    return { layout, panes, activePaneId };
+  } catch (error) {
+    console.error("Error fetching chart workspace:", error);
+    return null;
+  }
+}
+
+export async function saveChartWorkspace(
+  userId: string,
+  workspace: ChartWorkspace,
+): Promise<void> {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    localStorage.setItem(`${CHART_WORKSPACE_KEY}_${userId}`, JSON.stringify(workspace));
+  } catch (error) {
+    console.error("Error saving chart workspace:", error);
     throw error;
   }
 }
