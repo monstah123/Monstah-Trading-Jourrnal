@@ -29,11 +29,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Auth listener — runs ONCE only. Never recreated on route changes.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    let timeout: number;
+    const finishLoading = (firebaseUser: User | null) => {
+      window.clearTimeout(timeout);
       setUser(firebaseUser);
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (firebaseUser) => finishLoading(firebaseUser),
+      () => finishLoading(null)
+    );
+
+    // Firebase can remain pending on an unavailable network or invalid config.
+    // Do not trap the public landing page behind an indefinite auth check.
+    timeout = window.setTimeout(() => {
+      setLoading(false);
+      setUser(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect logic — separated so it doesn't re-create the auth listener
